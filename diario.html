@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="css/diario.css" />
+    <script src="js/diario.js" defer></script>
+    <title>Diário de bordo · O Mistério da Cozinha Clandestina</title>
+  </head>
+  <body class="interna">
+    <div class="topo">
+      <a class="voltar" href="index.html">← Voltar ao menu</a>
+      <button type="button" class="voltar" id="btn-voltar-jogo" hidden>
+        ← Voltar à cozinha
+      </button>
+    </div>
+
+    <main class="folha">
+      <h1>Diário de bordo</h1>
+      <p class="intro">
+        Registro automático das pistas encontradas na cozinha e espaço livre para
+        suas anotações durante a fuga.
+      </p>
+
+      <h2>Anotações pessoais</h2>
+      <p class="sub-info">
+        Use este espaço para anotar senhas, conversões (°F → °C) e ordens de
+        ingredientes. Tudo fica salvo automaticamente.
+      </p>
+      <textarea
+        id="notas-jogador"
+        rows="5"
+        placeholder="Ex: 1/2 xícara farinha = 60g | 176°F = 80°C | Ordem dos potes: Baunilha → Canela → Anis → Pimenta..."
+      ></textarea>
+      <div class="acoes-notas">
+        <span id="status-salvo" class="status-salvo">Anotações salvas.</span>
+        <button type="button" class="btn-limpar" id="btn-limpar-notas">
+          Limpar anotações
+        </button>
+      </div>
+
+      <h2>Status da expedição atual</h2>
+      <div class="resumo-partida" id="resumo-partida">
+        <div class="dado">
+          <span class="rotulo">Itens coletados</span>
+          <strong id="stat-itens">0</strong>
+        </div>
+        <div class="dado">
+          <span class="rotulo">Enigmas resolvidos</span>
+          <strong id="stat-acertos">0</strong>
+        </div>
+        <div class="dado">
+          <span class="rotulo">Tentativas erradas</span>
+          <strong id="stat-erros">0</strong>
+        </div>
+      </div>
+
+      <h2>Registro de pistas e descobertas</h2>
+      <div id="lista-pistas" class="lista-pistas"></div>
+    </main>
+  </body>
+</html>

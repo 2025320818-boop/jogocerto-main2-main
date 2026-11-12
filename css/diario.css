@@ -1,0 +1,236 @@
+@import url("https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap");
+
+:root {
+  --escuro: #1a110d;
+  --madeira: #4a3428;
+  --madeira-escura: #2c221e;
+  --papel: #fdf6e2;
+  --tinta: #2c221e;
+  --tomate: #d9534f;
+  --latao: #e6b800;
+  --suave: #7a6652;
+  --titulo: "Press Start 2P", monospace;
+  --texto: "VT323", monospace;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body.interna {
+  min-height: 100vh;
+  background-color: var(--madeira);
+  background-image:
+    repeating-linear-gradient(0deg, transparent 0 60px, var(--escuro) 60px 64px),
+    repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.1) 0 4px, transparent 4px 20px),
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.04) 0 8px, transparent 8px 36px);
+  color: var(--tinta);
+  font-family: var(--texto);
+  font-size: 1.45rem;
+  line-height: 1.35;
+  padding: 24px 16px 48px;
+  image-rendering: pixelated;
+}
+
+:focus-visible {
+  outline: 4px solid var(--latao);
+  outline-offset: 4px;
+}
+
+.topo {
+  width: min(760px, 100%);
+  margin: 0 auto 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.voltar {
+  display: inline-block;
+  padding: 10px 14px;
+  background: var(--madeira-escura);
+  border: 4px solid var(--latao);
+  color: var(--latao);
+  text-decoration: none;
+  font-family: var(--titulo);
+  font-size: 0.65rem;
+  line-height: 1.4;
+  box-shadow: 4px 4px 0 0 rgba(0, 0, 0, 0.6);
+  cursor: pointer;
+}
+
+.voltar:hover {
+  background: var(--latao);
+  color: var(--escuro);
+}
+
+.folha {
+  width: min(760px, 100%);
+  margin: 0 auto;
+  background: var(--papel);
+  padding: 36px 32px;
+  border: 4px solid var(--escuro);
+  border-left: 16px solid var(--tomate);
+  box-shadow: 14px 14px 0 0 rgba(0, 0, 0, 0.55);
+}
+
+.folha h1 {
+  font-family: var(--titulo);
+  font-weight: 400;
+  font-size: clamp(1.1rem, 3.5vw, 1.55rem);
+  line-height: 1.6;
+  margin-bottom: 12px;
+  text-shadow: 2px 2px 0 var(--latao);
+}
+
+.folha h2 {
+  font-family: var(--titulo);
+  font-weight: 400;
+  font-size: 0.85rem;
+  line-height: 1.6;
+  margin: 28px 0 12px;
+  padding-bottom: 6px;
+  border-bottom: 3px dashed var(--suave);
+}
+
+.intro {
+  font-size: 1.55rem;
+  color: var(--suave);
+}
+
+.sub-info {
+  font-size: 1.35rem;
+  color: var(--suave);
+  margin-bottom: 10px;
+}
+
+#notas-jogador {
+  width: 100%;
+  padding: 14px;
+  background: #fffbe9;
+  color: var(--tinta);
+  border: 4px solid var(--escuro);
+  font-family: var(--texto);
+  font-size: 1.45rem;
+  line-height: 1.35;
+  resize: vertical;
+}
+
+.acoes-notas {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 8px;
+  gap: 12px;
+}
+
+.status-salvo {
+  font-size: 1.25rem;
+  color: var(--suave);
+}
+
+.btn-limpar {
+  padding: 6px 12px;
+  background: var(--madeira-escura);
+  color: var(--papel);
+  border: 3px solid var(--escuro);
+  font-family: var(--titulo);
+  font-size: 0.55rem;
+  cursor: pointer;
+}
+
+.btn-limpar:hover {
+  background: var(--tomate);
+}
+
+.resumo-partida {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.dado {
+  background: #f3e7c4;
+  border: 4px solid var(--escuro);
+  padding: 12px;
+  text-align: center;
+}
+
+.dado .rotulo {
+  display: block;
+  font-size: 1.2rem;
+  color: var(--suave);
+}
+
+.dado strong {
+  font-family: var(--titulo);
+  font-size: 1.1rem;
+  color: var(--tinta);
+}
+
+.lista-pistas {
+  display: grid;
+  gap: 14px;
+}
+
+.pista-card {
+  padding: 16px;
+  border: 4px solid var(--escuro);
+  background: #fffbe9;
+}
+
+.pista-card.descoberta {
+  border-left: 10px solid var(--latao);
+}
+
+.pista-card.bloqueada {
+  background: #efe5c8;
+  opacity: 0.78;
+}
+
+.pista-topo {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+  flex-wrap: wrap;
+}
+
+.pista-cenario {
+  font-size: 1.2rem;
+  color: var(--suave);
+}
+
+.pista-badge {
+  font-family: var(--titulo);
+  font-size: 0.52rem;
+  padding: 4px 8px;
+  background: var(--madeira-escura);
+  color: var(--latao);
+}
+
+.pista-card.bloqueada .pista-badge {
+  color: var(--papel);
+}
+
+.pista-card h3 {
+  font-family: var(--titulo);
+  font-weight: 400;
+  font-size: 0.78rem;
+  line-height: 1.5;
+  margin-bottom: 6px;
+}
+
+@media (max-width: 560px) {
+  .folha {
+    padding: 24px 16px;
+  }
+  .resumo-partida {
+    grid-template-columns: 1fr;
+  }
+}
