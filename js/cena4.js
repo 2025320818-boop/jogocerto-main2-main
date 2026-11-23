@@ -71,7 +71,7 @@ function salvar() {
 }
 salvar();
 
-const $ = s => document.querySelector(s);
+function $(s) { return document.querySelector(s); }
 const overlay = $('#modal-overlay');
 const modalTitulo = $('#modal-titulo');
 const modalCorpo = $('#modal-corpo');
@@ -79,11 +79,11 @@ let travado = false;
 let selecionado = null;
 let aoFechar = null;
 
-function fala(texto) { $('#mensagem').textContent = texto; }
+function fala(texto) { $('#mensagem').innerText = texto; }
 
 function abrirModal(titulo, html) {
   if (aoFechar) { aoFechar(); aoFechar = null; }
-  modalTitulo.textContent = titulo;
+  modalTitulo.innerText = titulo;
   modalCorpo.innerHTML = html;
   overlay.hidden = false;
 }
@@ -93,32 +93,31 @@ function fecharModal() {
   overlay.hidden = true;
   modalCorpo.innerHTML = '';
 }
-$('#modal-fechar').addEventListener('click', fecharModal);
-overlay.addEventListener('click', e => { if (e.target === overlay) fecharModal(); });
-document.addEventListener('keydown', e => {
+$('#modal-fechar').onclick = fecharModal;
+overlay.onclick = function(e) { if (e.target === overlay) fecharModal(); };
+document.onkeydown = function(e) {
   if (e.key === 'Escape') fecharModal();
   if ((e.key === 'h' || e.key === 'H') && overlay.hidden) $('#cena').classList.toggle('debug');
-});
+};
 
 function renderInventario() {
   const barra = $('#inventory-bar');
-  barra.innerHTML = '';
+  let html = '';
   for (let i = 0; i < 10; i++) {
     const id = estado.inventario[i];
     if (id && ITENS[id]) {
-      const b = document.createElement('button');
-      b.type = 'button';
-      b.className = 'slot cheio' + (selecionado === id ? ' ativo' : '');
-      b.title = ITENS[id].nome;
-      b.setAttribute('aria-label', ITENS[id].nome);
-      b.textContent = ITENS[id].icone;
-      b.addEventListener('click', () => clicarItem(id));
-      barra.appendChild(b);
+      const cls = 'slot cheio' + (selecionado === id ? ' ativo' : '');
+      html += `<button type="button" class="${cls}" data-item="${id}" title="${ITENS[id].nome}" aria-label="${ITENS[id].nome}">${ITENS[id].icone}</button>`;
     } else {
-      const d = document.createElement('div');
-      d.className = 'slot';
-      barra.appendChild(d);
+      html += `<div class="slot"></div>`;
     }
+  }
+  barra.innerHTML = html;
+  const botoes = barra.querySelectorAll('button[data-item]');
+  for (let i = 0; i < botoes.length; i++) {
+    botoes[i].onclick = function() {
+      clicarItem(this.getAttribute('data-item'));
+    };
   }
 }
 function addItem(id) {
@@ -127,7 +126,11 @@ function addItem(id) {
   renderInventario();
 }
 function removerItem(id) {
-  estado.inventario = estado.inventario.filter(i => i !== id);
+  const novo = [];
+  for (let i = 0; i < estado.inventario.length; i++) {
+    if (estado.inventario[i] !== id) novo.push(estado.inventario[i]);
+  }
+  estado.inventario = novo;
   salvar();
   renderInventario();
 }
@@ -154,14 +157,14 @@ function clicarItem(id) {
   renderInventario();
 }
 function ligar(id, alvo, fn, usos) {
-  $(id).addEventListener('click', () => {
+  $(id).onclick = function() {
     if (selecionado) {
       if (usos && usos[selecionado]) { usos[selecionado](); return; }
       fala(ITENS[selecionado].nome + ' não funciona em: ' + alvo + '. Clique no item de novo para guardá-lo.');
       return;
     }
     fn();
-  });
+  };
 }
 
 function abrirMapa() {
@@ -218,57 +221,75 @@ function abrirBarril() {
   `);
 }
 
-function abrirGaveta() {
-  if (estado.gavetaAberta) {
-    fala('A gaveta secreta está aberta e vazia.');
-    return;
+function buscarVinho(id) {
+  for (let i = 0; i < VINHOS.length; i++) {
+    if (VINHOS[i].id === id) return VINHOS[i];
   }
-  const ordem = ['D', 'A', 'B', 'C'];
-  abrirModal('Gaveta secreta da mesa', `
-    <p>A gaveta tem quatro encaixes de garrafa em relevo. Coloque os vinhos na ordem certa, da esquerda para a direita.</p>
-    <div class="vinhos" id="vinhos"></div>
-    <button type="button" class="btn-pixel" id="abrir-gaveta">ABRIR GAVETA</button>
-    <p class="dica-modal" id="gaveta-msg">Use as setas para mudar a ordem. A regra do Chef está no quadro de avisos.</p>
-  `);
-  const cont = $('#vinhos');
-  const desenhar = () => {
-    cont.innerHTML = ordem.map((id, i) => {
-      const v = VINHOS.find(x => x.id === id);
-      return '<div class="vinho"><span class="garrafa">🍾</span>' +
-        '<span class="v-nome">' + v.nome + '</span>' +
-        '<span class="v-info">Safra ' + v.ano + '<br>' + v.teor.toFixed(1).replace('.', ',') + '%</span>' +
-        '<span class="v-setas">' +
-        '<button type="button" data-i="' + i + '" data-d="-1"' + (i === 0 ? ' disabled' : '') + ' aria-label="Mover para a esquerda">◀</button>' +
-        '<button type="button" data-i="' + i + '" data-d="1"' + (i === ordem.length - 1 ? ' disabled' : '') + ' aria-label="Mover para a direita">▶</button>' +
-        '</span></div>';
-    }).join('');
-  };
-  desenhar();
-  cont.addEventListener('click', e => {
-    const b = e.target.closest('button');
-    if (!b || b.disabled) return;
-    const i = Number(b.dataset.i);
-    const d = Number(b.dataset.d);
-    const t = ordem[i];
-    ordem[i] = ordem[i + d];
-    ordem[i + d] = t;
-    desenhar();
-  });
-  $('#abrir-gaveta').addEventListener('click', () => {
-    if (ordem.join() === ORDEM_VINHOS.join()) {
-      estado.gavetaAberta = true;
-      estado.acertos++;
-      salvar();
-      addItem('fragmentos');
-      fecharModal();
-      fala('Clique! A gaveta abriu e dentro havia fragmentos de uma página arrancada. Leve-os ao livro rasgado da estante.');
-    } else {
-      estado.erros++;
-      salvar();
-      $('#gaveta-msg').textContent = 'A gaveta não cedeu. A ordem não está certa. Releia a regra do Chef no quadro de avisos.';
-    }
-  });
+  return null;
 }
+
+const EnigmaGaveta = {
+  trancado: !estado.gavetaAberta,
+  resolvido: estado.gavetaAberta,
+  abrir: function() {
+    if (estado.gavetaAberta) {
+      fala('A gaveta secreta está aberta e vazia.');
+      return;
+    }
+    const ordem = ['D', 'A', 'B', 'C'];
+    abrirModal('Gaveta secreta da mesa', `
+      <p>A gaveta tem quatro encaixes de garrafa em relevo. Coloque os vinhos na ordem certa, da esquerda para a direita.</p>
+      <div class="vinhos" id="vinhos"></div>
+      <button type="button" class="btn-pixel" id="abrir-gaveta">ABRIR GAVETA</button>
+      <p class="dica-modal" id="gaveta-msg">Use as setas para mudar a ordem. A regra do Chef está no quadro de avisos.</p>
+    `);
+    const self = this;
+    const cont = $('#vinhos');
+    function desenhar() {
+      let html = '';
+      for (let i = 0; i < ordem.length; i++) {
+        const v = buscarVinho(ordem[i]);
+        const disEsq = i === 0 ? ' disabled' : '';
+        const disDir = i === ordem.length - 1 ? ' disabled' : '';
+        html += '<div class="vinho"><span class="garrafa">🍾</span>' +
+          '<span class="v-nome">' + v.nome + '</span>' +
+          '<span class="v-info">Safra ' + v.ano + '<br>' + v.teor.toFixed(1).replace('.', ',') + '%</span>' +
+          '<span class="v-setas">' +
+          '<button type="button" data-i="' + i + '" data-d="-1"' + disEsq + ' aria-label="Mover para a esquerda">◀</button>' +
+          '<button type="button" data-i="' + i + '" data-d="1"' + disDir + ' aria-label="Mover para a direita">▶</button>' +
+          '</span></div>';
+      }
+      cont.innerHTML = html;
+    }
+    desenhar();
+    cont.onclick = function(e) {
+      const b = e.target.closest('button');
+      if (!b || b.disabled) return;
+      const i = Number(b.dataset.i);
+      const d = Number(b.dataset.d);
+      const t = ordem[i];
+      ordem[i] = ordem[i + d];
+      ordem[i + d] = t;
+      desenhar();
+    };
+    $('#abrir-gaveta').onclick = function() {
+      if (ordem.join() === ORDEM_VINHOS.join()) {
+        self.trancado = false;
+        self.resolvido = true;
+        estado.gavetaAberta = true;
+        estado.acertos++;
+        salvar();
+        addItem('fragmentos');
+        fecharModal();
+        fala('Clique! A gaveta abriu e dentro havia fragmentos de uma página arrancada. Leve-os ao livro rasgado da estante.');
+      } else {
+        estado.erros++;
+        salvar();
+        $('#gaveta-msg').innerText = 'A gaveta não cedeu. A ordem não está certa. Releia a regra do Chef no quadro de avisos.';
+      }
+    };
+  }
+};
 
 function abrirPaginaLivro(novo) {
   abrirModal('Livro restaurado', `
@@ -288,51 +309,66 @@ function abrirPaginaLivro(novo) {
   `);
 }
 
-function abrirQuebraCabeca() {
-  selecionado = null;
-  renderInventario();
-  const deg = PECAS.map(() => 90 * (1 + Math.floor(Math.random() * 3)));
-  let resolvido = false;
-  abrirModal('Restaurar o livro', `
-    <p>Clique em cada fragmento para girá-lo, até formar a imagem completa da sobremesa.</p>
-    <div class="quebra" id="quebra">
-      ${PECAS.map((p, i) => '<button type="button" class="peca" data-i="' + i + '" aria-label="Fragmento ' + (i + 1) + '"><span class="peca-img" id="pc' + i + '">' + svgPeca(p[0], p[1]) + '</span></button>').join('')}
-    </div>
-    <p class="dica-modal">O quadro de avisos e o barril têm pistas de como é a página original.</p>
-  `);
-  const aplicar = () => deg.forEach((d, i) => { $('#pc' + i).style.transform = 'rotate(' + d + 'deg)'; });
-  aplicar();
-  $('#quebra').addEventListener('click', e => {
-    const b = e.target.closest('.peca');
-    if (!b || resolvido) return;
-    deg[Number(b.dataset.i)] += 90;
-    aplicar();
-    if (deg.every(d => d % 360 === 0)) {
-      resolvido = true;
-      setTimeout(() => {
-        estado.livroRestaurado = true;
-        estado.chaveMestraPega = true;
-        estado.acertos++;
-        salvar();
-        removerItem('fragmentos');
-        addItem('livro');
-        addItem('chavemestra');
-        abrirPaginaLivro(true);
-        fala('Você restaurou o livro e achou a chave mestra escondida atrás da página!');
-      }, 500);
+const EnigmaLivro = {
+  resolvido: estado.livroRestaurado,
+  abrirQuebraCabeca: function() {
+    selecionado = null;
+    renderInventario();
+    const deg = [];
+    let pecasHtml = '';
+    for (let i = 0; i < PECAS.length; i++) {
+      deg.push(90 * (1 + Math.floor(Math.random() * 3)));
+      pecasHtml += '<button type="button" class="peca" data-i="' + i + '" aria-label="Fragmento ' + (i + 1) + '"><span class="peca-img" id="pc' + i + '">' + svgPeca(PECAS[i][0], PECAS[i][1]) + '</span></button>';
     }
-  });
-}
-
-function abrirLivro() {
-  if (estado.livroRestaurado) {
-    abrirPaginaLivro(false);
-  } else if (estado.inventario.includes('fragmentos')) {
-    abrirQuebraCabeca();
-  } else {
-    fala('Um livro de receitas rústico com as páginas centrais arrancadas. Faltam os fragmentos da página.');
+    let resolvido = false;
+    abrirModal('Restaurar o livro', `
+      <p>Clique em cada fragmento para girá-lo, até formar a imagem completa da sobremesa.</p>
+      <div class="quebra" id="quebra">${pecasHtml}</div>
+      <p class="dica-modal">O quadro de avisos e o barril têm pistas de como é a página original.</p>
+    `);
+    const self = this;
+    function aplicar() {
+      for (let i = 0; i < deg.length; i++) {
+        $('#pc' + i).style.transform = 'rotate(' + deg[i] + 'deg)';
+      }
+    }
+    aplicar();
+    $('#quebra').onclick = function(e) {
+      const b = e.target.closest('.peca');
+      if (!b || resolvido) return;
+      deg[Number(b.dataset.i)] += 90;
+      aplicar();
+      let completo = true;
+      for (let i = 0; i < deg.length; i++) {
+        if (deg[i] % 360 !== 0) { completo = false; break; }
+      }
+      if (completo) {
+        resolvido = true;
+        setTimeout(function() {
+          self.resolvido = true;
+          estado.livroRestaurado = true;
+          estado.chaveMestraPega = true;
+          estado.acertos++;
+          salvar();
+          removerItem('fragmentos');
+          addItem('livro');
+          addItem('chavemestra');
+          abrirPaginaLivro(true);
+          fala('Você restaurou o livro e achou a chave mestra escondida atrás da página!');
+        }, 500);
+      }
+    };
+  },
+  interagir: function() {
+    if (estado.livroRestaurado) {
+      abrirPaginaLivro(false);
+    } else if (estado.inventario.includes('fragmentos')) {
+      this.abrirQuebraCabeca();
+    } else {
+      fala('Um livro de receitas rústico com as páginas centrais arrancadas. Faltam os fragmentos da página.');
+    }
   }
-}
+};
 
 function usarChaveNoArmario() {
   if (estado.armarioAberto) {
@@ -357,6 +393,49 @@ function abrirArmario() {
   }
 }
 
+function avaliarDesfechoFinal() {
+  clearInterval(relogio);
+  travado = true;
+  const restante = Math.max(0, Math.ceil((estado.fim - Date.now()) / 1000));
+  const temBaunilha = estado.inventario.includes('baunilha');
+  const temEspeciarias = estado.inventario.includes('especiarias');
+  const temEmulsao = Boolean(estado.emulsaoPronta);
+  const temYuzu = Boolean(estado.yuzuUsado);
+  const temCalda = Boolean(estado.caldaPronta);
+  const temMerengue = Boolean(estado.merengue);
+
+  try { sessionStorage.removeItem(CHAVE_ESTADO); } catch (e) {}
+
+  if (temBaunilha && temEspeciarias && temEmulsao && temYuzu && temCalda && temMerengue && estado.erros <= 3) {
+    abrirModal('🏆 FINAL 1 · ESTRELA MICHELIN DA COZINHA!', `
+      <div class="papel">
+        <p><strong>Fuga Perfeita · Nota 10/10</strong></p>
+        <p>Você cruzou a porta para a Pista Principal com o merengue dourado, calda no ponto de bola mole, emulsão brilhante, yuzu descongelado, extrato de baunilha rara e especiarias.</p>
+        <p>O Chef prova a sobremesa em silêncio e lhe entrega o avental oficial de Subchef. Tempo restante: ${formatar(restante)}.</p>
+      </div>
+      <a class="btn-pixel" href="../index.html">Voltar ao menu</a>
+    `);
+  } else if (temBaunilha && temMerengue && temCalda) {
+    abrirModal('🥈 FINAL 2 · APROVADO COM RESSALVAS', `
+      <div class="papel">
+        <p><strong>Fuga Concluída · Nota 7,5/10</strong></p>
+        <p>Você escapou a tempo e entregou a sobremesa com a baunilha rara e o merengue no ponto, mas o Chef notou a falta de alguns toques finais de emulsão ou temperatura.</p>
+        <p>Você garantiu sua vaga na brigada, mas começará na confeitaria auxiliar. Erros cometidos: ${estado.erros}.</p>
+      </div>
+      <a class="btn-pixel" href="../index.html">Voltar ao menu</a>
+    `);
+  } else {
+    abrirModal('⚠️ FINAL 3 · FUGA COM SEQUELAS (PRATO INCOMPLETO)', `
+      <div class="papel">
+        <p><strong>Escapou por um triz · Nota 4,0/10</strong></p>
+        <p>Você conseguiu destrancar a saída do escritório, mas chegou à Pista Principal sem ingredientes essenciais (como o Extrato de Baunilha Rara da Despensa ou a emulsão da Câmara Fria).</p>
+        <p>Você não foi demitido, mas passou o resto da noite lavando a louça do concurso!</p>
+      </div>
+      <a class="btn-pixel" href="../index.html">Voltar ao menu</a>
+    `);
+  }
+}
+
 function abrirPorta() {
   if (!estado.chaveMestraPega) {
     fala('A porta está trancada por uma fechadura antiga. Só uma chave mestra abre. O quadro de avisos diz onde ela está.');
@@ -366,33 +445,30 @@ function abrirPorta() {
     fala('A chave mestra gira, mas há um bilhete preso na porta: "Só passa quem já abriu o armário de especiarias."');
     return;
   }
-  abrirModal('Pista Principal', `
-    <p>A porta se abre e você vê a cozinha principal, com luzes intensas e a bancada de empratamento. A avaliação do Chef está para começar.</p>
-    <a class="btn-pixel" href="cena5.html">Entrar →</a>
-  `);
+  avaliarDesfechoFinal();
 }
 
 ligar('#no-quadro', 'Quadro', abrirQuadro);
 ligar('#no-notamaster', 'Bilhete', abrirNotaMaster);
 ligar('#no-esboco', 'Desenho', abrirEsboco);
 ligar('#no-barril', 'Barril', abrirBarril);
-ligar('#no-gaveta', 'Gaveta', abrirGaveta);
-ligar('#no-livro', 'Livro', abrirLivro);
+ligar('#no-gaveta', 'Gaveta', function() { EnigmaGaveta.abrir(); });
+ligar('#no-livro', 'Livro', function() { EnigmaLivro.interagir(); });
 ligar('#no-armario', 'Armário', abrirArmario, { chavemestra: usarChaveNoArmario });
 ligar('#no-porta', 'Porta', abrirPorta, { chavemestra: abrirPorta });
 ligar('#no-fechadura', 'Fechadura', abrirPorta, { chavemestra: abrirPorta });
 
-ligar('#no-poster-esq', 'Cartaz', () => fala('Uma cópia do cartaz do enigma das densidades da Câmara Fria, toda manchada. O Chef decorou o escritório com os próprios enigmas.'));
-ligar('#no-poster-centro', 'Cartaz', () => fala('Outra cópia do cartaz das densidades. Nada de novo aqui, você já resolveu esse enigma.'));
-ligar('#no-estante', 'Estante', () => fala('Uma estante cheia de livros de receitas rústicos. Quase todos estão inteiros. Procure o que está com páginas arrancadas.'));
-ligar('#no-mesa', 'Mesa', () => fala('Uma mesa de carvalho maciço. A gaveta do meio tem uma trava estranha, com encaixes de garrafa.'));
-ligar('#no-trofeus-chapeu', 'Troféus', () => fala('Troféus de chapéu de chef dourado. "Melhor Sobremesa do Ano", três anos seguidos.'));
-ligar('#no-trofeus-panela', 'Troféus', () => fala('Troféus de panela de cobre. Estão sem poeira: o Chef os limpa todo dia.'));
-ligar('#no-cupula', 'Redoma', () => fala('Uma redoma de vidro com uma planta verde estranha. A plaquinha diz: "Hortelã do Chef. Não tocar."'));
-ligar('#no-timer', 'Timer', () => fala('Um timer digital parado em 121. Parece uma temperatura que você já viu na Confeitaria.'));
-ligar('#no-baunilha', 'Garrafa', () => fala('Uma garrafa de extrato de baunilha rara, quase vazia. Ainda bem que você já pegou a sua.'));
-ligar('#no-chave-quadro', 'Chave', () => fala('Uma chave dourada presa ao quadro. Está soldada na cortiça: é só enfeite. O bilhete ao lado diz que a master key está no livro.'));
-ligar('#no-bilhetes', 'Bilhetes', () => fala('Vários bilhetes iguais: "176 °F = 80 °C". O Chef cansou de ver estagiário errar essa conversão.'));
+ligar('#no-poster-esq', 'Cartaz', function() { fala('Uma cópia do cartaz do enigma das densidades da Câmara Fria, toda manchada. O Chef decorou o escritório com os próprios enigmas.'); });
+ligar('#no-poster-centro', 'Cartaz', function() { fala('Outra cópia do cartaz das densidades. Nada de novo aqui, você já resolveu esse enigma.'); });
+ligar('#no-estante', 'Estante', function() { fala('Uma estante cheia de livros de receitas rústicos. Quase todos estão inteiros. Procure o que está com páginas arrancadas.'); });
+ligar('#no-mesa', 'Mesa', function() { fala('Uma mesa de carvalho maciço. A gaveta do meio tem uma trava estranha, com encaixes de garrafa.'); });
+ligar('#no-trofeus-chapeu', 'Troféus', function() { fala('Troféus de chapéu de chef dourado. "Melhor Sobremesa do Ano", três anos seguidos.'); });
+ligar('#no-trofeus-panela', 'Troféus', function() { fala('Troféus de panela de cobre. Estão sem poeira: o Chef os limpa todo dia.'); });
+ligar('#no-cupula', 'Redoma', function() { fala('Uma redoma de vidro com uma planta verde estranha. A plaquinha diz: "Hortelã do Chef. Não tocar."'); });
+ligar('#no-timer', 'Timer', function() { fala('Um timer digital parado em 121. Parece uma temperatura que você já viu na Confeitaria.'); });
+ligar('#no-baunilha', 'Garrafa', function() { fala('Uma garrafa de extrato de baunilha rara, quase vazia. Ainda bem que você já pegou a sua.'); });
+ligar('#no-chave-quadro', 'Chave', function() { fala('Uma chave dourada presa ao quadro. Está soldada na cortiça: é só enfeite. O bilhete ao lado diz que a master key está no livro.'); });
+ligar('#no-bilhetes', 'Bilhetes', function() { fala('Vários bilhetes iguais: "176 °F = 80 °C". O Chef cansou de ver estagiário errar essa conversão.'); });
 
 function formatar(seg) {
   const m = String(Math.floor(seg / 60)).padStart(2, '0');
@@ -411,7 +487,7 @@ function fimDeJogo() {
 function tick() {
   const restante = Math.max(0, Math.ceil((estado.fim - Date.now()) / 1000));
   const cron = $('#cronometro');
-  cron.textContent = formatar(restante);
+  cron.innerText = formatar(restante);
   cron.classList.toggle('urgente', restante <= 60);
   if (restante <= 0) fimDeJogo();
 }

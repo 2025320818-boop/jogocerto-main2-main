@@ -35,14 +35,14 @@ function salvar() {
 }
 salvar();
 
-const $ = s => document.querySelector(s);
+function $(s) { return document.querySelector(s); }
 const overlay = $('#modal-overlay');
 const modalTitulo = $('#modal-titulo');
 const modalCorpo = $('#modal-corpo');
 let travado = false;
 let selecionado = null;
 
-function fala(texto) { $('#mensagem').textContent = texto; }
+function fala(texto) { $('#mensagem').innerText = texto; }
 
 function registrarPista(idPista) {
   if (!Array.isArray(estado.pistas)) estado.pistas = [];
@@ -53,7 +53,7 @@ function registrarPista(idPista) {
 }
 
 function abrirModal(titulo, html) {
-  modalTitulo.textContent = titulo;
+  modalTitulo.innerText = titulo;
   modalCorpo.innerHTML = html;
   overlay.hidden = false;
 }
@@ -62,29 +62,28 @@ function fecharModal() {
   overlay.hidden = true;
   modalCorpo.innerHTML = '';
 }
-$('#modal-fechar').addEventListener('click', fecharModal);
-overlay.addEventListener('click', e => { if (e.target === overlay) fecharModal(); });
-document.addEventListener('keydown', e => { if (e.key === 'Escape') fecharModal(); });
+$('#modal-fechar').onclick = fecharModal;
+overlay.onclick = function(e) { if (e.target === overlay) fecharModal(); };
+document.onkeydown = function(e) { if (e.key === 'Escape') fecharModal(); };
 
 function renderInventario() {
   const barra = $('#inventory-bar');
-  barra.innerHTML = '';
+  let html = '';
   for (let i = 0; i < 6; i++) {
     const id = estado.inventario[i];
-    if (id) {
-      const b = document.createElement('button');
-      b.type = 'button';
-      b.className = 'slot cheio' + (selecionado === id ? ' ativo' : '');
-      b.title = ITENS[id].nome;
-      b.setAttribute('aria-label', ITENS[id].nome);
-      b.textContent = ITENS[id].icone;
-      b.addEventListener('click', () => clicarItem(id));
-      barra.appendChild(b);
+    if (id && ITENS[id]) {
+      const cls = 'slot cheio' + (selecionado === id ? ' ativo' : '');
+      html += `<button type="button" class="${cls}" data-item="${id}" title="${ITENS[id].nome}" aria-label="${ITENS[id].nome}">${ITENS[id].icone}</button>`;
     } else {
-      const d = document.createElement('div');
-      d.className = 'slot';
-      barra.appendChild(d);
+      html += `<div class="slot"></div>`;
     }
+  }
+  barra.innerHTML = html;
+  const botoes = barra.querySelectorAll('button[data-item]');
+  for (let i = 0; i < botoes.length; i++) {
+    botoes[i].onclick = function() {
+      clicarItem(this.getAttribute('data-item'));
+    };
   }
 }
 function addItem(id) {
@@ -116,7 +115,7 @@ function agir(alvo, fn) {
   fn();
 }
 function ligar(id, alvo, fn) {
-  $(id).addEventListener('click', () => agir(alvo, fn));
+  $(id).onclick = function() { agir(alvo, fn); };
 }
 
 function abrirMapa() {
@@ -156,34 +155,50 @@ function abrirCaixote() {
   `);
 }
 
-function abrirPotes() {
-  if (estado.potesAbertos) {
-    fala('Os potes já foram abertos. Só restam temperos comuns.');
-    return;
-  }
-  const idx = [0, 0, 0, 0];
-  abrirModal('Potes trancados', `
-    <p>Quatro potes com travas de símbolos. Coloque-os na ordem certa.</p>
-    <div class="discos">
-      ${idx.map((_, i) => `<button type="button" class="disco" data-i="${i}"></button>`).join('')}
-    </div>
-    <button type="button" class="btn-pixel" id="abrir-potes">DESTRAVAR</button>
-    <p class="dica-modal" id="potes-msg">Clique em cada pote para trocar o símbolo.</p>
-  `);
-  const discos = modalCorpo.querySelectorAll('.disco');
-  const desenhar = () => {
-    discos.forEach((d, i) => {
-      d.innerHTML = `<span class="emo">${SIMBOLOS[idx[i]].e}</span><span class="nm">${SIMBOLOS[idx[i]].n}</span>`;
-    });
-  };
-  desenhar();
-  discos.forEach(d => d.addEventListener('click', () => {
-    const i = Number(d.dataset.i);
-    idx[i] = (idx[i] + 1) % SIMBOLOS.length;
+const EnigmaPotes = {
+  trancado: !estado.potesAbertos,
+  resolvido: estado.potesAbertos,
+  indices: [0, 0, 0, 0],
+  abrir: function() {
+    if (estado.potesAbertos) {
+      fala('Os potes já foram abertos. Só restam temperos comuns.');
+      return;
+    }
+    this.indices = [0, 0, 0, 0];
+    let botoesHtml = '';
+    for (let i = 0; i < 4; i++) {
+      botoesHtml += `<button type="button" class="disco" data-i="${i}"></button>`;
+    }
+    abrirModal('Potes trancados', `
+      <p>Quatro potes com travas de símbolos. Coloque-os na ordem certa.</p>
+      <div class="discos">${botoesHtml}</div>
+      <button type="button" class="btn-pixel" id="abrir-potes">DESTRAVAR</button>
+      <p class="dica-modal" id="potes-msg">Clique em cada pote para trocar o símbolo.</p>
+    `);
+    const self = this;
+    const discos = modalCorpo.querySelectorAll('.disco');
+    function desenhar() {
+      for (let i = 0; i < discos.length; i++) {
+        const s = SIMBOLOS[self.indices[i]];
+        discos[i].innerHTML = `<span class="emo">${s.e}</span><span class="nm">${s.n}</span>`;
+      }
+    }
     desenhar();
-  }));
-  $('#abrir-potes').addEventListener('click', () => {
-    if (idx.join() === ORDEM_POTES.join()) {
+    for (let i = 0; i < discos.length; i++) {
+      discos[i].onclick = function() {
+        const idx = Number(this.getAttribute('data-i'));
+        self.indices[idx] = (self.indices[idx] + 1) % SIMBOLOS.length;
+        desenhar();
+      };
+    }
+    $('#abrir-potes').onclick = function() {
+      self.verificar();
+    };
+  },
+  verificar: function() {
+    if (this.indices.join() === ORDEM_POTES.join()) {
+      this.trancado = false;
+      this.resolvido = true;
       estado.potesAbertos = true;
       estado.acertos++;
       salvar();
@@ -194,62 +209,77 @@ function abrirPotes() {
     } else {
       estado.erros++;
       salvar();
-      $('#potes-msg').textContent = 'As travas não cederam. A ordem não está certa. Procure alguma pista.';
+      $('#potes-msg').innerText = 'As travas não cederam. A ordem não está certa. Procure alguma pista.';
     }
-  });
-}
-
-function abrirTeclado() {
-  if (estado.portaAberta) {
-    fala('A fechadura eletrônica já está destravada.');
-    return;
   }
-  let codigo = '';
-  abrirModal('Fechadura eletrônica', `
-    <div class="visor" id="visor">----</div>
-    <div class="teclado">
-      ${[1,2,3,4,5,6,7,8,9].map(n => `<button type="button" data-n="${n}">${n}</button>`).join('')}
-      <button type="button" data-a="limpar">C</button>
-      <button type="button" data-n="0">0</button>
-      <button type="button" data-a="ok">OK</button>
-    </div>
-    <p class="dica-modal">Digite os 4 dígitos da senha.</p>
-  `);
-  const visor = $('#visor');
-  const atualizar = () => { visor.textContent = (codigo + '----').slice(0, 4); };
-  modalCorpo.querySelector('.teclado').addEventListener('click', e => {
-    const b = e.target.closest('button');
-    if (!b) return;
-    if (b.dataset.n !== undefined) {
-      if (codigo.length < 4) { codigo += b.dataset.n; atualizar(); }
-    } else if (b.dataset.a === 'limpar') {
-      codigo = '';
-      atualizar();
-    } else if (b.dataset.a === 'ok' && codigo.length === 4) {
-      if (codigo === SENHA_PORTA) {
-        estado.portaAberta = true;
-        estado.acertos++;
-        salvar();
-        $('#no-teclado').classList.add('aberta');
-        fecharModal();
-        fala(estado.mapaPego
-          ? 'Bip! A luz ficou verde. A porta destravou. Agora é só sair.'
-          : 'Bip! A luz ficou verde. Mas você não sabe o caminho. Falta achar o mapa do restaurante.');
-      } else {
-        estado.erros++;
-        salvar();
-        codigo = '';
-        visor.classList.add('erro');
-        visor.textContent = 'ERRO';
-        setTimeout(() => { visor.classList.remove('erro'); atualizar(); }, 800);
-      }
+};
+
+const EnigmaTeclado = {
+  trancado: !estado.portaAberta,
+  resolvido: estado.portaAberta,
+  codigo: '',
+  abrir: function() {
+    if (estado.portaAberta) {
+      fala('A fechadura eletrônica já está destravada.');
+      return;
     }
-  });
-}
+    this.codigo = '';
+    const nums = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+    let teclasHtml = '';
+    for (let i = 0; i < nums.length; i++) {
+      teclasHtml += `<button type="button" data-n="${nums[i]}">${nums[i]}</button>`;
+    }
+    abrirModal('Fechadura eletrônica', `
+      <div class="visor" id="visor">----</div>
+      <div class="teclado">
+        ${teclasHtml}
+        <button type="button" data-a="limpar">C</button>
+        <button type="button" data-n="0">0</button>
+        <button type="button" data-a="ok">OK</button>
+      </div>
+      <p class="dica-modal">Digite os 4 dígitos da senha.</p>
+    `);
+    const self = this;
+    const visor = $('#visor');
+    function atualizar() {
+      visor.innerText = (self.codigo + '----').slice(0, 4);
+    }
+    modalCorpo.querySelector('.teclado').onclick = function(e) {
+      const b = e.target.closest('button');
+      if (!b) return;
+      if (b.dataset.n !== undefined) {
+        if (self.codigo.length < 4) { self.codigo += b.dataset.n; atualizar(); }
+      } else if (b.dataset.a === 'limpar') {
+        self.codigo = '';
+        atualizar();
+      } else if (b.dataset.a === 'ok' && self.codigo.length === 4) {
+        if (self.codigo === SENHA_PORTA) {
+          self.trancado = false;
+          self.resolvido = true;
+          estado.portaAberta = true;
+          estado.acertos++;
+          salvar();
+          $('#no-teclado').classList.add('aberta');
+          fecharModal();
+          fala(estado.mapaPego
+            ? 'Bip! A luz ficou verde. A porta destravou. Agora é só sair.'
+            : 'Bip! A luz ficou verde. Mas você não sabe o caminho. Falta achar o mapa do restaurante.');
+        } else {
+          estado.erros++;
+          salvar();
+          self.codigo = '';
+          visor.classList.add('erro');
+          visor.innerText = 'ERRO';
+          setTimeout(function() { visor.classList.remove('erro'); atualizar(); }, 800);
+        }
+      }
+    };
+  }
+};
 
 function abrirPorta() {
   if (!estado.portaAberta) {
-    abrirTeclado();
+    EnigmaTeclado.abrir();
     return;
   }
   if (!estado.mapaPego) {
@@ -266,10 +296,10 @@ function abrirDiarioRapido() {
   const notasSalvas = localStorage.getItem('cozinha_anotacoes') || '';
   const pistas = [];
 
-  if (estado.pistas?.includes('bilhete') || estado.portaAberta) {
+  if ((estado.pistas && estado.pistas.includes('bilhete')) || estado.portaAberta) {
     pistas.push('<li><strong>Bilhete na parede:</strong> 1/2 xícara de farinha (1 xícara = 120 g) + 176 °F em °C (°C = (°F − 32) ÷ 1,8).</li>');
   }
-  if (estado.pistas?.includes('caixote') || estado.potesAbertos) {
+  if ((estado.pistas && estado.pistas.includes('caixote')) || estado.potesAbertos) {
     pistas.push('<li><strong>Diário do Chef (p. 12):</strong> Ordem dos potes (suave → forte): Baunilha, Canela, Anis, Pimenta.</li>');
   }
   if (estado.mapaPego) {
@@ -294,28 +324,28 @@ function abrirDiarioRapido() {
   `);
 
   const campo = $('#diario-rapido-texto');
-  campo.addEventListener('input', () => {
+  campo.oninput = function() {
     localStorage.setItem('cozinha_anotacoes', campo.value);
-    $('#diario-status').textContent = 'Salvo ✓';
-  });
+    $('#diario-status').innerText = 'Salvo ✓';
+  };
 }
 
 const btnDiario = $('#btn-diario');
 if (btnDiario) {
-  btnDiario.addEventListener('click', () => {
+  btnDiario.onclick = function() {
     selecionado = null;
     renderInventario();
     abrirDiarioRapido();
-  });
+  };
 }
 
 ligar('#no-porta', 'Porta', abrirPorta);
-ligar('#no-teclado', 'Teclado', abrirTeclado);
+ligar('#no-teclado', 'Teclado', function() { EnigmaTeclado.abrir(); });
 ligar('#no-bilhete', 'Bilhete', abrirBilhete);
 ligar('#no-caixote', 'Caixote', abrirCaixote);
-ligar('#no-potes', 'Potes trancados', abrirPotes);
+ligar('#no-potes', 'Potes trancados', function() { EnigmaPotes.abrir(); });
 
-ligar('#no-mapa', 'Papel no caixote', () => {
+ligar('#no-mapa', 'Papel no caixote', function() {
   if (estado.mapaPego) {
     fala('Você já pegou o mapa.');
     return;
@@ -327,7 +357,7 @@ ligar('#no-mapa', 'Papel no caixote', () => {
   fala('Você pegou o papel dobrado: é o mapa do restaurante! Clique nele no inventário para ver.');
 });
 
-ligar('#no-farinha', 'Sacos de farinha', () => {
+ligar('#no-farinha', 'Sacos de farinha', function() {
   if (estado.chavePega) {
     fala('Só farinha e trigo. Não tem mais nada aqui.');
     return;
@@ -339,10 +369,10 @@ ligar('#no-farinha', 'Sacos de farinha', () => {
   fala('Você enfiou a mão no saco de farinha e sentiu algo de metal: uma chave de fenda de confeiteiro!');
 });
 
-ligar('#no-fechadura', 'Fechadura', () => fala('Uma fechadura antiga, enferrujada. Não há chave por aqui, a porta usa o teclado.'));
-ligar('#no-janela', 'Janela', () => fala('Uma janela com grades grossas. Lá fora é noite e não dá para passar.'));
-ligar('#no-barril', 'Barril', () => fala('Um barril de metal vazio. Cheira a azeite velho.'));
-ligar('#no-potes-esq', 'Potes de tempero', () => fala('Cravo, canela, pimenta... nenhum desses é baunilha. Os rótulos mais interessantes estão nos potes trancados, lá em cima.'));
+ligar('#no-fechadura', 'Fechadura', function() { fala('Uma fechadura antiga, enferrujada. Não há chave por aqui, a porta usa o teclado.'); });
+ligar('#no-janela', 'Janela', function() { fala('Uma janela com grades grossas. Lá fora é noite e não dá para passar.'); });
+ligar('#no-barril', 'Barril', function() { fala('Um barril de metal vazio. Cheira a azeite velho.'); });
+ligar('#no-potes-esq', 'Potes de tempero', function() { fala('Cravo, canela, pimenta... nenhum desses é baunilha. Os rótulos mais interessantes estão nos potes trancados, lá em cima.'); });
 
 function formatar(seg) {
   const m = String(Math.floor(seg / 60)).padStart(2, '0');
@@ -361,7 +391,7 @@ function fimDeJogo() {
 function tick() {
   const restante = Math.max(0, Math.ceil((estado.fim - Date.now()) / 1000));
   const cron = $('#cronometro');
-  cron.textContent = formatar(restante);
+  cron.innerText = formatar(restante);
   cron.classList.toggle('urgente', restante <= 60);
   if (restante <= 0) fimDeJogo();
 }

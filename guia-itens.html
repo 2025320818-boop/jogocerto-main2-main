@@ -3,13 +3,15 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <link rel="stylesheet" href="/css/guiacss.css"
+    <link rel="stylesheet" href="css/guiacss.css" />
     <title>Guia de itens · O Mistério da Cozinha Clandestina</title>
   </head>
   <body class="interna">
-    <div class="topo">
-      <a class="voltar" href="index.html">← Voltar ao menu</a>
-    </div>
+    <header class="topo">
+      <nav aria-label="Voltar ao menu">
+        <a class="voltar" href="index.html">← Voltar ao menu</a>
+      </nav>
+    </header>
     <main class="folha">
       <h1>Guia de itens</h1>
       <p class="intro">
@@ -17,18 +19,18 @@
         desbloqueia.
       </p>
 
-      <div class="grade-itens">
+      <section class="grade-itens" aria-label="Lista de itens do jogo">
         <article class="item">
           <div class="icone">
             <img
-              src="IMG/chave de fenda.png"
+              src="img/chave de fenda.png"
               alt="Chave de Fenda de Confeiteiro"
             />
           </div>
-          <h3>Chave de Fenda de Confeiteiro</h3>
+          <h2>Chave de Fenda de Confeiteiro</h2>
           <dl>
             <dt>Onde achar</dt>
-            <dd>Cenário 1 – Despensa (à vista)</dd>
+            <dd>Cenário 1 – Despensa (nos sacos de farinha)</dd>
             <dt>Onde usar</dt>
             <dd>Cenário 3 – Câmara Fria</dd>
             <dt>Efeito</dt>
@@ -40,9 +42,9 @@
 
         <article class="item">
           <div class="icone">
-            <img src="IMG/TERMOMETRO.png" alt="Termômetro Digital" />
+            <img src="img/TERMOMETRO.png" alt="Termômetro Digital" />
           </div>
-          <h3>Termômetro Digital</h3>
+          <h2>Termômetro Digital</h2>
           <dl>
             <dt>Onde achar</dt>
             <dd>Cenário 3 – Câmara Fria</dd>
@@ -58,18 +60,18 @@
         <article class="item">
           <div class="icone">
             <img
-              src="IMG/EXTRATO DE BAUNILHA.png"
+              src="img/EXTRATO DE BAUNILHA.png"
               alt="Extrato de Baunilha Rara"
             />
           </div>
-          <h3>Extrato de Baunilha Rara</h3>
+          <h2>Extrato de Baunilha Rara</h2>
           <dl>
             <dt>Onde achar</dt>
             <dd>Cenário 1 – Despensa</dd>
             <dt>Precisa de</dt>
-            <dd>Senha do Cofre das Especiarias</dd>
+            <dd>Ordem correta nos potes trancados</dd>
             <dt>Onde usar</dt>
-            <dd>Cenário 5 – Bancada Final</dd>
+            <dd>Avaliação Final</dd>
             <dt>Efeito</dt>
             <dd>Ingrediente obrigatório para a nota máxima no prato.</dd>
           </dl>
@@ -77,38 +79,42 @@
 
         <article class="item">
           <div class="icone">
-            <img src="IMG/LIVRO.png" alt="Livro Restaurado" />
+            <img src="img/LIVRO.png" alt="Livro Restaurado" />
           </div>
-          <h3>Livro Restaurado</h3>
+          <h2>Livro Restaurado</h2>
           <dl>
             <dt>Onde achar</dt>
             <dd>Cenário 4 – Escritório do Chef</dd>
             <dt>Precisa de</dt>
-            <dd>Fragmentos da página</dd>
+            <dd>Fragmentos da página (na gaveta secreta)</dd>
             <dt>Onde usar</dt>
-            <dd>Cenário 5 – Bancada Final</dd>
+            <dd>Cenário 4 – Escritório do Chef</dd>
             <dt>Efeito</dt>
-            <dd>Revela a ordem correta para o enigma da sequência.</dd>
+            <dd>Revela a chave mestra e a ordem original da receita.</dd>
           </dl>
         </article>
 
         <article class="item">
           <div class="icone">
-            <img src="IMG/YUZU.png" alt="Fruta de Yuzu Congelada" />
+            <img src="img/YUZU.png" alt="Fruta de Yuzu Congelada" />
           </div>
-          <h3>Fruta de Yuzu Congelada</h3>
+          <h2>Fruta de Yuzu Congelada</h2>
           <dl>
             <dt>Onde achar</dt>
             <dd>Cenário 3 – Câmara Fria</dd>
             <dt>Precisa de</dt>
             <dd>Senha da Balança de Precisão</dd>
             <dt>Onde usar</dt>
-            <dd>Cenário 2 – Fornos</dd>
+            <dd>Cenário 2 – Bancada de Mármore</dd>
             <dt>Efeito</dt>
             <dd>Descongelamento controlado para usar na receita.</dd>
           </dl>
         </article>
-      </div>
+      </section>
+
+      <footer>
+        <p><a href="index.html">Voltar ao cardápio principal</a></p>
+      </footer>
     </main>
   </body>
 </html>

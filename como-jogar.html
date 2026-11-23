@@ -3,86 +3,144 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <link rel="stylesheet" href="/css/comojogarcss.css" />
-    <title>Como jogar · O Mistério da Cozinha Clandestina</title>
+    <link rel="stylesheet" href="css/comojogarcss.css" />
+    <title>Como jogar e História · O Mistério da Cozinha Clandestina</title>
+    <style>
+      .tabela-finais {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 16px 0 24px;
+        background: #fffbe9;
+      }
+      .tabela-finais th,
+      .tabela-finais td {
+        border: 3px solid #2c221e;
+        padding: 10px 12px;
+        text-align: left;
+      }
+      .tabela-finais th {
+        background: #e6b800;
+        color: #1a110d;
+      }
+      .bloco-audio {
+        margin: 20px 0;
+        padding: 16px;
+        background: #fffbe9;
+        border: 3px solid #2c221e;
+      }
+      .bloco-audio audio {
+        width: 100%;
+        margin-top: 8px;
+      }
+    </style>
   </head>
   <body class="interna">
-    <div class="topo">
-      <a class="voltar" href="index.html">← Voltar ao menu</a>
-    </div>
+    <header class="topo">
+      <nav aria-label="Voltar ao menu">
+        <a class="voltar" href="index.html">← Voltar ao menu</a>
+      </nav>
+    </header>
+
     <main class="folha">
-      <h1>Como jogar</h1>
-      <p class="intro">
-        Você acordou trancado na despensa de uma cozinha clandestina. O concurso
-        do Chef começa em minutos e você precisa chegar à bancada final com a
-        sobremesa pronta.
-      </p>
+      <h1>Como jogar &amp; História</h1>
 
-      <h2>Objetivo</h2>
-      <p>
-        Atravessar os 5 cenários, resolver os 10 enigmas e montar a sobremesa na
-        pista principal antes que o cronômetro chegue a 00:00.
-      </p>
+      <section aria-labelledby="titulo-historia">
+        <h2 id="titulo-historia">A História</h2>
+        <p class="intro">
+          Você é um jovem confeiteiro que acordou trancado na despensa subterrânea
+          de um renomado restaurante clandestino. O rigoroso Chef Executivo
+          iniciará a avaliação final em 15 minutos, mas sabotadores rasgaram a
+          receita original e trancaram todas as salas da cozinha.
+        </p>
 
-      <h2>Passo a passo</h2>
-      <ol class="passos">
-        <li>
-          <strong>Explore o cenário.</strong> Clique nos objetos para examinar.
-          Os que brilham podem ser interagidos.
-        </li>
-        <li>
-          <strong>Colete itens.</strong> Tudo o que você pegar vai para a barra
-          de inventário, na parte de baixo da tela.
-        </li>
-        <li>
-          <strong>Use os itens.</strong> Clique em um item do inventário para
-          selecioná-lo e depois clique no objeto onde quer usá-lo.
-        </li>
-        <li>
-          <strong>Resolva os enigmas.</strong> Conversões de medidas,
-          sequências, minigames de tempo e muito mais abrem novas portas.
-        </li>
-        <li>
-          <strong>Avance de cenário.</strong> Cada área tem um objetivo
-          principal que libera a próxima.
-        </li>
-        <li>
-          <strong>Empratar.</strong> Na pista final, siga a sequência correta e
-          monte o prato com cuidado.
-        </li>
-      </ol>
+        <div class="bloco-audio">
+          <p><strong>🎧 Ambientação Sonora da Cozinha:</strong></p>
+          <audio controls preload="none" aria-label="Trilha ambiente de suspense da cozinha">
+            <source src="https://actions.google.com/sounds/v1/ambiences/kitchen_ambience.ogg" type="audio/ogg" />
+            Seu navegador não suporta o elemento de áudio.
+          </audio>
+        </div>
+      </section>
 
-      <h2>Tempo e pontuação</h2>
-      <ul>
-        <li>O cronômetro regressivo fica no topo da tela e não pausa.</li>
-        <li>
-          Sua <strong>precisão</strong> sobe com acertos de primeira nos enigmas
-          e bom desempenho nos minigames.
-        </li>
-        <li>Tentativas erradas diminuem a precisão.</li>
-      </ul>
+      <section aria-labelledby="titulo-cenarios">
+        <h2 id="titulo-cenarios">Os Cenários da Cozinha</h2>
+        <ul>
+          <li><strong>Cenário 1 · A Despensa:</strong> Onde você acorda. Esconde o mapa, a chave de fenda e o extrato de baunilha rara.</li>
+          <li><strong>Cenário 2 · Confeitaria e Fornos:</strong> Onde o merengue é assado em dois estágios e a calda atinge o ponto de bola mole.</li>
+          <li><strong>Cenário 3 · Câmara Fria:</strong> Sala congelada com enigmas de densidade, misturador de emulsão e o termômetro digital.</li>
+          <li><strong>Cenário 4 · Escritório do Chef:</strong> Onde está a adega secreta, o livro de receitas rasgado e a saída para a avaliação final.</li>
+        </ul>
+      </section>
 
-      <h2>Os 4 finais</h2>
-      <ul>
-        <li>
-          <strong>A Nova Estrela Michelin:</strong> mais de 3 minutos restantes
-          e precisão a partir de 90%.
-        </li>
-        <li>
-          <strong>Aprovado com Ressalvas:</strong> dentro do tempo, precisão
-          entre 70% e 89%.
-        </li>
-        <li>
-          <strong>Desastre Empratado:</strong> dentro do tempo, precisão abaixo
-          de 70%.
-        </li>
-        <li><strong>Fora do Tempo!:</strong> o cronômetro chegou a zero.</li>
-      </ul>
+      <section aria-labelledby="titulo-passos">
+        <h2 id="titulo-passos">Passo a passo</h2>
+        <ol class="passos">
+          <li>
+            <strong>Explore o cenário.</strong> Clique nos objetos para examinar.
+            Os que brilham podem ser interagidos.
+          </li>
+          <li>
+            <strong>Colete itens.</strong> Tudo o que você pegar vai para a barra
+            de inventário, na parte de baixo da tela.
+          </li>
+          <li>
+            <strong>Use os itens.</strong> Clique em um item do inventário para
+            selecioná-lo e depois clique no objeto onde quer usá-lo.
+          </li>
+          <li>
+            <strong>Resolva os enigmas.</strong> Conversões de medidas,
+            sequências, minigames de tempo e muito mais abrem novas portas.
+          </li>
+          <li>
+            <strong>Avance de cenário.</strong> Cada área tem um objetivo
+            principal que libera a próxima.
+          </li>
+        </ol>
+      </section>
+
+      <section aria-labelledby="titulo-finais">
+        <h2 id="titulo-finais">Tabela dos 4 Finais Possíveis</h2>
+        <table class="tabela-finais">
+          <thead>
+            <tr>
+              <th>Desfecho</th>
+              <th>Condição para alcançar</th>
+              <th>Resultado</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>🏆 Estrela Michelin</strong></td>
+              <td>Todos os ingredientes raros coletados e até 3 erros</td>
+              <td>Fuga perfeita e promoção a Subchef</td>
+            </tr>
+            <tr>
+              <td><strong>🥈 Aprovado com Ressalvas</strong></td>
+              <td>Baunilha, merengue e calda prontos dentro do tempo</td>
+              <td>Vaga garantida na brigada auxiliar</td>
+            </tr>
+            <tr>
+              <td><strong>⚠️ Prato Incompleto</strong></td>
+              <td>Escapou sem ingredientes essenciais</td>
+              <td>Sobreviveu, mas vai lavar a louça</td>
+            </tr>
+            <tr>
+              <td><strong>⏰ Fora do Tempo!</strong></td>
+              <td>Cronômetro chegou a 00:00</td>
+              <td>Demitido pelo Chef antes da prova</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
 
       <p class="dica">
         <strong>Dica:</strong> leia bilhetes, rótulos e diários com atenção. As
         respostas dos enigmas costumam estar escondidas neles.
       </p>
+
+      <footer>
+        <p><a href="jogar.html">Ir direto para o jogo →</a></p>
+      </footer>
     </main>
   </body>
 </html>

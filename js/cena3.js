@@ -42,7 +42,7 @@ function salvar() {
 }
 salvar();
 
-const $ = s => document.querySelector(s);
+function $(s) { return document.querySelector(s); }
 const overlay = $('#modal-overlay');
 const modalTitulo = $('#modal-titulo');
 const modalCorpo = $('#modal-corpo');
@@ -50,11 +50,11 @@ let travado = false;
 let selecionado = null;
 let aoFechar = null;
 
-function fala(texto) { $('#mensagem').textContent = texto; }
+function fala(texto) { $('#mensagem').innerText = texto; }
 
 function abrirModal(titulo, html) {
   if (aoFechar) { aoFechar(); aoFechar = null; }
-  modalTitulo.textContent = titulo;
+  modalTitulo.innerText = titulo;
   modalCorpo.innerHTML = html;
   overlay.hidden = false;
 }
@@ -64,32 +64,31 @@ function fecharModal() {
   overlay.hidden = true;
   modalCorpo.innerHTML = '';
 }
-$('#modal-fechar').addEventListener('click', fecharModal);
-overlay.addEventListener('click', e => { if (e.target === overlay) fecharModal(); });
-document.addEventListener('keydown', e => {
+$('#modal-fechar').onclick = fecharModal;
+overlay.onclick = function(e) { if (e.target === overlay) fecharModal(); };
+document.onkeydown = function(e) {
   if (e.key === 'Escape') fecharModal();
   if ((e.key === 'h' || e.key === 'H') && overlay.hidden) $('#cena').classList.toggle('debug');
-});
+};
 
 function renderInventario() {
   const barra = $('#inventory-bar');
-  barra.innerHTML = '';
+  let html = '';
   for (let i = 0; i < 8; i++) {
     const id = estado.inventario[i];
     if (id && ITENS[id]) {
-      const b = document.createElement('button');
-      b.type = 'button';
-      b.className = 'slot cheio' + (selecionado === id ? ' ativo' : '');
-      b.title = ITENS[id].nome;
-      b.setAttribute('aria-label', ITENS[id].nome);
-      b.textContent = ITENS[id].icone;
-      b.addEventListener('click', () => clicarItem(id));
-      barra.appendChild(b);
+      const cls = 'slot cheio' + (selecionado === id ? ' ativo' : '');
+      html += `<button type="button" class="${cls}" data-item="${id}" title="${ITENS[id].nome}" aria-label="${ITENS[id].nome}">${ITENS[id].icone}</button>`;
     } else {
-      const d = document.createElement('div');
-      d.className = 'slot';
-      barra.appendChild(d);
+      html += `<div class="slot"></div>`;
     }
+  }
+  barra.innerHTML = html;
+  const botoes = barra.querySelectorAll('button[data-item]');
+  for (let i = 0; i < botoes.length; i++) {
+    botoes[i].onclick = function() {
+      clicarItem(this.getAttribute('data-item'));
+    };
   }
 }
 function addItem(id) {
@@ -98,7 +97,11 @@ function addItem(id) {
   renderInventario();
 }
 function removerItem(id) {
-  estado.inventario = estado.inventario.filter(i => i !== id);
+  const novo = [];
+  for (let i = 0; i < estado.inventario.length; i++) {
+    if (estado.inventario[i] !== id) novo.push(estado.inventario[i]);
+  }
+  estado.inventario = novo;
   salvar();
   renderInventario();
 }
@@ -119,14 +122,14 @@ function clicarItem(id) {
   renderInventario();
 }
 function ligar(id, alvo, fn, usos) {
-  $(id).addEventListener('click', () => {
+  $(id).onclick = function() {
     if (selecionado) {
       if (usos && usos[selecionado]) { usos[selecionado](); return; }
       fala(ITENS[selecionado].nome + ' não funciona em: ' + alvo + '. Clique no item de novo para guardá-lo.');
       return;
     }
     fn();
-  });
+  };
 }
 
 function abrirMapa() {
@@ -144,11 +147,16 @@ function abrirMapa() {
 
 function painelNumerico(titulo, intro, tam, completo, checar, sucesso, dica) {
   let codigo = '';
+  const nums = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+  let teclasHtml = '';
+  for (let i = 0; i < nums.length; i++) {
+    teclasHtml += `<button type="button" data-n="${nums[i]}">${nums[i]}</button>`;
+  }
   abrirModal(titulo, `
     <p>${intro}</p>
     <div class="visor" id="visor">${'-'.repeat(tam)}</div>
     <div class="teclado">
-      ${[1,2,3,4,5,6,7,8,9].map(d => `<button type="button" data-n="${d}">${d}</button>`).join('')}
+      ${teclasHtml}
       <button type="button" data-a="limpar">C</button>
       <button type="button" data-n="0">0</button>
       <button type="button" data-a="ok">OK</button>
@@ -156,8 +164,8 @@ function painelNumerico(titulo, intro, tam, completo, checar, sucesso, dica) {
     ${dica ? `<p class="dica-modal">${dica}</p>` : ''}
   `);
   const visor = $('#visor');
-  const atualizar = () => { visor.textContent = (codigo + '-'.repeat(tam)).slice(0, tam); };
-  modalCorpo.querySelector('.teclado').addEventListener('click', ev => {
+  function atualizar() { visor.innerText = (codigo + '-'.repeat(tam)).slice(0, tam); }
+  modalCorpo.querySelector('.teclado').onclick = function(ev) {
     const b = ev.target.closest('button');
     if (!b) return;
     if (b.dataset.n !== undefined) {
@@ -174,11 +182,11 @@ function painelNumerico(titulo, intro, tam, completo, checar, sucesso, dica) {
         salvar();
         codigo = '';
         visor.classList.add('erro');
-        visor.textContent = 'ERRO';
-        setTimeout(() => { visor.classList.remove('erro'); atualizar(); }, 800);
+        visor.innerText = 'ERRO';
+        setTimeout(function() { visor.classList.remove('erro'); atualizar(); }, 800);
       }
     }
-  });
+  };
 }
 
 function abrirPoster() {
@@ -206,143 +214,163 @@ function abrirRecipiente(numero) {
   `);
 }
 
-function abrirSeguranca() {
-  if (estado.segurancaAberta) {
-    fala('O bloqueio de segurança já está liberado. A luz do teclado está verde.');
-    return;
+const EnigmaSeguranca = {
+  trancado: !estado.segurancaAberta,
+  resolvido: estado.segurancaAberta,
+  abrir: function() {
+    if (estado.segurancaAberta) {
+      fala('O bloqueio de segurança já está liberado. A luz do teclado está verde.');
+      return;
+    }
+    const self = this;
+    painelNumerico(
+      'Bloqueio de segurança',
+      'Digite a temperatura do freezer em °C (o visor mostra 14 °F).',
+      3, false,
+      function(c) { return c === SENHA_SEGURANCA; },
+      function() {
+        self.trancado = false;
+        self.resolvido = true;
+        estado.segurancaAberta = true;
+        estado.acertos++;
+        salvar();
+        $('#no-teclado').classList.add('aberta');
+        fecharModal();
+        fala('Bip! A luz do teclado ficou verde. A porta do freezer está liberada.');
+      },
+      'Dica: o cartaz da parede explica como converter °F em °C.'
+    );
   }
-  painelNumerico(
-    'Bloqueio de segurança',
-    'Digite a temperatura do freezer em °C (o visor mostra 14 °F).',
-    3, false,
-    c => c === SENHA_SEGURANCA,
-    () => {
-      estado.segurancaAberta = true;
-      estado.acertos++;
-      salvar();
-      $('#no-teclado').classList.add('aberta');
-      fecharModal();
-      fala('Bip! A luz do teclado ficou verde. A porta do freezer está liberada.');
-    },
-    'Dica: o cartaz da parede explica como converter °F em °C.'
-  );
-}
+};
 
-function abrirCaixa() {
-  if (estado.caixaAberta) {
-    fala('O freezer de frutas está vazio. Você já pegou o yuzu.');
-    return;
+const EnigmaCaixa = {
+  trancado: !estado.caixaAberta,
+  resolvido: estado.caixaAberta,
+  abrir: function() {
+    if (estado.caixaAberta) {
+      fala('O freezer de frutas está vazio. Você já pegou o yuzu.');
+      return;
+    }
+    const self = this;
+    painelNumerico(
+      'Freezer de frutas raras',
+      'Trava de balança de precisão. Digite 4 dígitos: a massa (g) do Recipiente #3 e a do Recipiente #11.',
+      4, true,
+      function(c) { return c === SENHA_CAIXA; },
+      function() {
+        self.trancado = false;
+        self.resolvido = true;
+        estado.caixaAberta = true;
+        estado.acertos++;
+        salvar();
+        addItem('yuzu');
+        $('#no-caixa').classList.add('aberta');
+        fecharModal();
+        fala('Clique! O freezer abriu e você pegou a Fruta de Yuzu Congelada. Ela precisa descongelar na Confeitaria.');
+      },
+      'Dica: leia as etiquetas dos recipientes e use a fórmula do cartaz.'
+    );
   }
-  painelNumerico(
-    'Freezer de frutas raras',
-    'Trava de balança de precisão. Digite 4 dígitos: a massa (g) do Recipiente #3 e a do Recipiente #11.',
-    4, true,
-    c => c === SENHA_CAIXA,
-    () => {
-      estado.caixaAberta = true;
-      estado.acertos++;
-      salvar();
-      addItem('yuzu');
-      $('#no-caixa').classList.add('aberta');
-      fecharModal();
-      fala('Clique! O freezer abriu e você pegou a Fruta de Yuzu Congelada. Ela precisa descongelar na Confeitaria.');
-    },
-    'Dica: leia as etiquetas dos recipientes e use a fórmula do cartaz.'
-  );
-}
+};
 
-function abrirMisturador() {
-  if (estado.emulsaoPronta) {
-    fala('O creme já está em emulsão perfeita, guardado para o prato final.');
-    return;
-  }
-  selecionado = null;
-  renderInventario();
-  abrirModal('Misturador de emulsão', `
-    <p>Mantenha o indicador dentro da zona verde por <strong>${EMULSAO.meta} segundos</strong> sem deixar o creme cortar.</p>
-    <div class="trilho" id="trilho">
-      <div class="zona-em" id="zona-em"></div>
-      <div class="marca" id="marca"></div>
-    </div>
-    <div class="progresso"><div class="progresso-barra" id="prog"></div></div>
-    <div class="leitura" id="leitura-em">0.0 / ${EMULSAO.meta} s</div>
-    <button type="button" class="btn-pixel" id="comecar">COMEÇAR</button>
-    <p class="dica-modal" id="em-msg">Mova o mouse (ou o dedo) sobre a barra. Também funciona com as setas ← e →.</p>
-  `);
-  const trilho = $('#trilho');
-  const zonaEl = $('#zona-em');
-  const marca = $('#marca');
-  const prog = $('#prog');
-  const leit = $('#leitura-em');
-  const msg = $('#em-msg');
-  const btn = $('#comecar');
-  let pos = 50, centro = 50, dentro = 0, fora = 0, raf = 0, ultimo = 0, t0 = 0;
+const EnigmaMisturador = {
+  resolvido: estado.emulsaoPronta,
+  abrir: function() {
+    if (estado.emulsaoPronta) {
+      fala('O creme já está em emulsão perfeita, guardado para o prato final.');
+      return;
+    }
+    selecionado = null;
+    renderInventario();
+    abrirModal('Misturador de emulsão', `
+      <p>Mantenha o indicador dentro da zona verde por <strong>${EMULSAO.meta} segundos</strong> sem deixar o creme cortar.</p>
+      <div class="trilho" id="trilho">
+        <div class="zona-em" id="zona-em"></div>
+        <div class="marca" id="marca"></div>
+      </div>
+      <div class="progresso"><div class="progresso-barra" id="prog"></div></div>
+      <div class="leitura" id="leitura-em">0.0 / ${EMULSAO.meta} s</div>
+      <button type="button" class="btn-pixel" id="comecar">COMEÇAR</button>
+      <p class="dica-modal" id="em-msg">Mova o mouse (ou o dedo) sobre a barra. Também funciona com as setas ← e →.</p>
+    `);
+    const self = this;
+    const trilho = $('#trilho');
+    const zonaEl = $('#zona-em');
+    const marca = $('#marca');
+    const prog = $('#prog');
+    const leit = $('#leitura-em');
+    const msg = $('#em-msg');
+    const btn = $('#comecar');
+    let pos = 50, centro = 50, dentro = 0, fora = 0, raf = 0, ultimo = 0, t0 = 0;
 
-  const desenhar = () => {
-    zonaEl.style.left = (centro - EMULSAO.largura / 2) + '%';
-    zonaEl.style.width = EMULSAO.largura + '%';
-    marca.style.left = pos + '%';
-    prog.style.width = Math.min(100, (dentro / EMULSAO.meta) * 100) + '%';
-    leit.textContent = Math.min(dentro, EMULSAO.meta).toFixed(1) + ' / ' + EMULSAO.meta + ' s';
-  };
-  const moverPara = x => {
-    const r = trilho.getBoundingClientRect();
-    pos = Math.max(0, Math.min(100, ((x - r.left) / r.width) * 100));
-  };
-  trilho.addEventListener('pointermove', e => moverPara(e.clientX));
-  trilho.addEventListener('pointerdown', e => moverPara(e.clientX));
-  const teclas = e => {
-    if (e.key === 'ArrowLeft') { pos = Math.max(0, pos - 4); e.preventDefault(); }
-    if (e.key === 'ArrowRight') { pos = Math.min(100, pos + 4); e.preventDefault(); }
-  };
-  document.addEventListener('keydown', teclas);
-  aoFechar = () => {
-    cancelAnimationFrame(raf);
-    document.removeEventListener('keydown', teclas);
-  };
+    function desenhar() {
+      zonaEl.style.left = (centro - EMULSAO.largura / 2) + '%';
+      zonaEl.style.width = EMULSAO.largura + '%';
+      marca.style.left = pos + '%';
+      prog.style.width = Math.min(100, (dentro / EMULSAO.meta) * 100) + '%';
+      leit.innerText = Math.min(dentro, EMULSAO.meta).toFixed(1) + ' / ' + EMULSAO.meta + ' s';
+    }
+    function moverPara(x) {
+      const r = trilho.getBoundingClientRect();
+      pos = Math.max(0, Math.min(100, ((x - r.left) / r.width) * 100));
+    }
+    trilho.onpointermove = function(e) { moverPara(e.clientX); };
+    trilho.onpointerdown = function(e) { moverPara(e.clientX); };
+    const teclaAnterior = document.onkeydown;
+    document.onkeydown = function(e) {
+      if (e.key === 'Escape') fecharModal();
+      if (e.key === 'ArrowLeft') { pos = Math.max(0, pos - 4); e.preventDefault(); }
+      if (e.key === 'ArrowRight') { pos = Math.min(100, pos + 4); e.preventDefault(); }
+    };
+    aoFechar = function() {
+      cancelAnimationFrame(raf);
+      document.onkeydown = teclaAnterior;
+    };
 
-  const quadro = agora => {
-    const dt = Math.min(0.1, (agora - ultimo) / 1000);
-    ultimo = agora;
-    const t = (agora - t0) / 1000;
-    centro = 50 + 30 * Math.sin(t * 0.8) + 8 * Math.sin(t * 2.1);
-    centro = Math.max(EMULSAO.largura / 2, Math.min(100 - EMULSAO.largura / 2, centro));
-    if (Math.abs(pos - centro) <= EMULSAO.largura / 2) {
-      dentro += dt;
+    function quadro(agora) {
+      const dt = Math.min(0.1, (agora - ultimo) / 1000);
+      ultimo = agora;
+      const t = (agora - t0) / 1000;
+      centro = 50 + 30 * Math.sin(t * 0.8) + 8 * Math.sin(t * 2.1);
+      centro = Math.max(EMULSAO.largura / 2, Math.min(100 - EMULSAO.largura / 2, centro));
+      if (Math.abs(pos - centro) <= EMULSAO.largura / 2) {
+        dentro += dt;
+        fora = 0;
+      } else {
+        fora += dt;
+      }
+      desenhar();
+      if (dentro >= EMULSAO.meta) {
+        estado.emulsaoPronta = true;
+        self.resolvido = true;
+        estado.acertos++;
+        salvar();
+        fecharModal();
+        fala('Perfeito! A emulsão ficou lisa e brilhante, sem cortar. O creme está pronto para o prato final.');
+        return;
+      }
+      if (fora > EMULSAO.graca) {
+        estado.erros++;
+        salvar();
+        msg.innerText = 'O creme cortou! Fique dentro da zona verde. Tente de novo.';
+        btn.innerText = 'TENTAR DE NOVO';
+        btn.hidden = false;
+        return;
+      }
+      raf = requestAnimationFrame(quadro);
+    }
+    btn.onclick = function() {
+      dentro = 0;
       fora = 0;
-    } else {
-      fora += dt;
-    }
+      btn.hidden = true;
+      msg.innerText = 'Siga a zona verde com o indicador vermelho!';
+      t0 = performance.now();
+      ultimo = t0;
+      raf = requestAnimationFrame(quadro);
+    };
     desenhar();
-    if (dentro >= EMULSAO.meta) {
-      estado.emulsaoPronta = true;
-      estado.acertos++;
-      salvar();
-      fecharModal();
-      fala('Perfeito! A emulsão ficou lisa e brilhante, sem cortar. O creme está pronto para o prato final.');
-      return;
-    }
-    if (fora > EMULSAO.graca) {
-      estado.erros++;
-      salvar();
-      msg.textContent = 'O creme cortou! Fique dentro da zona verde. Tente de novo.';
-      btn.textContent = 'TENTAR DE NOVO';
-      btn.hidden = false;
-      return;
-    }
-    raf = requestAnimationFrame(quadro);
-  };
-  btn.addEventListener('click', () => {
-    dentro = 0;
-    fora = 0;
-    btn.hidden = true;
-    msg.textContent = 'Siga a zona verde com o indicador vermelho!';
-    t0 = performance.now();
-    ultimo = t0;
-    raf = requestAnimationFrame(quadro);
-  });
-  desenhar();
-}
+  }
+};
 
 function usarChaveNoTermostato() {
   if (estado.termostatoAberto) {
@@ -369,7 +397,7 @@ function abrirTermostato() {
 
 function abrirPorta() {
   if (!estado.segurancaAberta) {
-    abrirSeguranca();
+    EnigmaSeguranca.abrir();
     return;
   }
   const falta = [];
@@ -393,24 +421,24 @@ function abrirPorta() {
 }
 
 ligar('#no-poster', 'Cartaz', abrirPoster);
-ligar('#no-pote3a', 'Recipiente', () => abrirRecipiente(3));
-ligar('#no-pote3b', 'Recipiente', () => abrirRecipiente(3));
-ligar('#no-pote11', 'Recipiente', () => abrirRecipiente(11));
-ligar('#no-teclado', 'Teclado', abrirSeguranca);
+ligar('#no-pote3a', 'Recipiente', function() { abrirRecipiente(3); });
+ligar('#no-pote3b', 'Recipiente', function() { abrirRecipiente(3); });
+ligar('#no-pote11', 'Recipiente', function() { abrirRecipiente(11); });
+ligar('#no-teclado', 'Teclado', function() { EnigmaSeguranca.abrir(); });
 ligar('#no-porta', 'Porta', abrirPorta);
-ligar('#no-caixa', 'Freezer', abrirCaixa);
-ligar('#no-misturador', 'Misturador', abrirMisturador);
+ligar('#no-caixa', 'Freezer', function() { EnigmaCaixa.abrir(); });
+ligar('#no-misturador', 'Misturador', function() { EnigmaMisturador.abrir(); });
 ligar('#no-termostato', 'Termostato', abrirTermostato, { chave: usarChaveNoTermostato });
 
-ligar('#no-armario', 'Armário', () => fala('Um armário de inox lacrado pelo gelo. Não abre.'));
-ligar('#no-geladeira-esq', 'Geladeira', () => fala('Uma geladeira industrial cheia de caixas. A porta está congelada e não abre.'));
-ligar('#no-geladeira-meio', 'Geladeira', () => fala('Uma geladeira de vidro com caixas de leite e manteiga. Nada de útil.'));
-ligar('#no-caixas-esq', 'Caixas', () => fala('Caixas de papelão duras de tanto gelo.'));
-ligar('#no-caixas-dir', 'Caixas', () => fala('Caixas congeladas no alto da prateleira. Nada de útil.'));
-ligar('#no-lampada', 'Lâmpada', () => fala('A luz azulada da lâmpada deixa a sala ainda mais fria.'));
-ligar('#no-gelo', 'Gelo', () => fala('Poças de gelo no chão. Melhor andar devagar.'));
-ligar('#no-potes-med', 'Recipientes', () => fala('As etiquetas destes recipientes estão apagadas pelo gelo. Os legíveis estão na prateleira de cima.'));
-ligar('#no-recip-baixo', 'Recipientes', () => fala('Recipientes 011 e 012, com as etiquetas cobertas de gelo. Não dá para ler.'));
+ligar('#no-armario', 'Armário', function() { fala('Um armário de inox lacrado pelo gelo. Não abre.'); });
+ligar('#no-geladeira-esq', 'Geladeira', function() { fala('Uma geladeira industrial cheia de caixas. A porta está congelada e não abre.'); });
+ligar('#no-geladeira-meio', 'Geladeira', function() { fala('Uma geladeira de vidro com caixas de leite e manteiga. Nada de útil.'); });
+ligar('#no-caixas-esq', 'Caixas', function() { fala('Caixas de papelão duras de tanto gelo.'); });
+ligar('#no-caixas-dir', 'Caixas', function() { fala('Caixas congeladas no alto da prateleira. Nada de útil.'); });
+ligar('#no-lampada', 'Lâmpada', function() { fala('A luz azulada da lâmpada deixa a sala ainda mais fria.'); });
+ligar('#no-gelo', 'Gelo', function() { fala('Poças de gelo no chão. Melhor andar devagar.'); });
+ligar('#no-potes-med', 'Recipientes', function() { fala('As etiquetas destes recipientes estão apagadas pelo gelo. Os legíveis estão na prateleira de cima.'); });
+ligar('#no-recip-baixo', 'Recipientes', function() { fala('Recipientes 011 e 012, com as etiquetas cobertas de gelo. Não dá para ler.'); });
 
 function formatar(seg) {
   const m = String(Math.floor(seg / 60)).padStart(2, '0');
@@ -429,7 +457,7 @@ function fimDeJogo() {
 function tick() {
   const restante = Math.max(0, Math.ceil((estado.fim - Date.now()) / 1000));
   const cron = $('#cronometro');
-  cron.textContent = formatar(restante);
+  cron.innerText = formatar(restante);
   cron.classList.toggle('urgente', restante <= 60);
   if (restante <= 0) fimDeJogo();
 }

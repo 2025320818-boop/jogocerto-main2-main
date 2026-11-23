@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="css/cssindex.css" />
+    <title>IAs Utilizadas · O Mistério da Cozinha Clandestina</title>
+    <style>
+      .lista-ias {
+        display: grid;
+        gap: 14px;
+        text-align: left;
+      }
+      .ia-item {
+        padding: 16px;
+        background: #fffbe9;
+        border: 4px solid var(--escuro);
+        border-left: 12px solid var(--suave);
+        box-shadow: 6px 6px 0 0 rgba(0, 0, 0, 0.25);
+      }
+      .ia-item.principal {
+        border-left-color: var(--latao);
+        background: #fff8d6;
+      }
+      .ia-topo {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 6px;
+      }
+      .ia-nome {
+        font-family: var(--titulo);
+        font-size: 0.8rem;
+        line-height: 1.5;
+        color: var(--tinta);
+      }
+      .ia-tag {
+        padding: 3px 8px;
+        background: var(--escuro);
+        color: var(--papel);
+        font-family: var(--titulo);
+        font-size: 0.5rem;
+        line-height: 1.4;
+      }
+      .ia-item.principal .ia-tag {
+        background: var(--tomate);
+        color: var(--papel);
+      }
+      .ia-desc {
+        font-size: 1.3rem;
+        color: var(--tinta);
+      }
+      .btn-voltar-menu {
+        display: inline-block;
+        margin-top: 28px;
+        padding: 14px 20px;
+        background: var(--tomate);
+        color: var(--papel);
+        border: 4px solid var(--escuro);
+        box-shadow: 6px 6px 0 0 var(--escuro);
+        font-family: var(--titulo);
+        font-size: 0.75rem;
+        line-height: 1.4;
+        text-decoration: none;
+      }
+      .btn-voltar-menu:hover,
+      .btn-voltar-menu:focus-visible {
+        background: var(--latao);
+        color: var(--escuro);
+        transform: translate(-3px, -3px);
+        box-shadow: 9px 9px 0 0 var(--escuro);
+      }
+      .btn-voltar-menu:active {
+        transform: translate(3px, 3px);
+        box-shadow: none;
+      }
+    </style>
+  </head>
+  <body class="home">
+    <main class="cardapio">
+      <header>
+        <div class="selo" aria-hidden="true">🤖</div>
+        <h1>IAs Utilizadas</h1>
+        <p class="subtitulo">Ferramentas gratuitas usadas na produção</p>
+      </header>
+
+      <section class="lista-ias" aria-label="Inteligências artificiais usadas no projeto">
+        <article class="ia-item principal">
+          <div class="ia-topo">
+            <h2 class="ia-nome">★ Google Gemini</h2>
+            <span class="ia-tag">Gratuita · Código &amp; Roteiro</span>
+          </div>
+          <p class="ia-desc">
+            Base principal do desenvolvimento: estruturação do HTML, CSS e
+            lógica dos cenários em JavaScript, depuração de bugs, criação dos
+            enigmas, pistas e textos do Diário de Bordo.
+          </p>
+        </article>
+
+        <article class="ia-item">
+          <div class="ia-topo">
+            <h2 class="ia-nome">Bing Image Creator</h2>
+            <span class="ia-tag">Gratuita · Artes de Cenário</span>
+          </div>
+          <p class="ia-desc">
+            Geração dos ambientes em estética retrô e pixel art, como o interior
+            da despensa trancada, iluminação atmosférica e composição dos
+            objetos interativos.
+          </p>
+        </article>
+
+        <article class="ia-item">
+          <div class="ia-topo">
+            <h2 class="ia-nome">ElevenLabs</h2>
+            <span class="ia-tag">Plano Gratuito · Efeitos Sonoros</span>
+          </div>
+          <p class="ia-desc">
+            Criação de efeitos pontuais de imersão, como bipes do teclado
+            eletrônico, rangido de portas pesadas, trancas e folhear de papéis.
+          </p>
+        </article>
+
+        <article class="ia-item">
+          <div class="ia-topo">
+            <h2 class="ia-nome">Suno AI</h2>
+            <span class="ia-tag">Plano Gratuito · Trilha Sonora</span>
+          </div>
+          <p class="ia-desc">
+            Composição da música ambiente de mistério e tensão que acompanha a
+            contagem regressiva em cada sala.
+          </p>
+        </article>
+
+        <article class="ia-item">
+          <div class="ia-topo">
+            <h2 class="ia-nome">Remove.bg / Clipdrop</h2>
+            <span class="ia-tag">Gratuitas · Tratamento Visual</span>
+          </div>
+          <p class="ia-desc">
+            Remoção de fundo, ajuste de contraste e acabamento dos elementos
+            visuais para encaixe nos modais e no inventário.
+          </p>
+        </article>
+      </section>
+
+      <a class="btn-voltar-menu" href="index.html">← Voltar ao Cardápio</a>
+
+      <footer class="rodape-cardapio">
+        <p>O Mistério da Cozinha Clandestina · 2026</p>
+      </footer>
+    </main>
+  </body>
+</html>

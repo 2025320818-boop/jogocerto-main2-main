@@ -41,7 +41,7 @@ function salvar() {
 }
 salvar();
 
-const $ = s => document.querySelector(s);
+function $(s) { return document.querySelector(s); }
 const overlay = $('#modal-overlay');
 const modalTitulo = $('#modal-titulo');
 const modalCorpo = $('#modal-corpo');
@@ -49,11 +49,11 @@ let travado = false;
 let selecionado = null;
 let aoFechar = null;
 
-function fala(texto) { $('#mensagem').textContent = texto; }
+function fala(texto) { $('#mensagem').innerText = texto; }
 
 function abrirModal(titulo, html) {
   if (aoFechar) { aoFechar(); aoFechar = null; }
-  modalTitulo.textContent = titulo;
+  modalTitulo.innerText = titulo;
   modalCorpo.innerHTML = html;
   overlay.hidden = false;
 }
@@ -63,32 +63,31 @@ function fecharModal() {
   overlay.hidden = true;
   modalCorpo.innerHTML = '';
 }
-$('#modal-fechar').addEventListener('click', fecharModal);
-overlay.addEventListener('click', e => { if (e.target === overlay) fecharModal(); });
-document.addEventListener('keydown', e => {
+$('#modal-fechar').onclick = fecharModal;
+overlay.onclick = function(e) { if (e.target === overlay) fecharModal(); };
+document.onkeydown = function(e) {
   if (e.key === 'Escape') fecharModal();
   if ((e.key === 'h' || e.key === 'H') && overlay.hidden) $('#cena').classList.toggle('debug');
-});
+};
 
 function renderInventario() {
   const barra = $('#inventory-bar');
-  barra.innerHTML = '';
+  let html = '';
   for (let i = 0; i < 8; i++) {
     const id = estado.inventario[i];
     if (id && ITENS[id]) {
-      const b = document.createElement('button');
-      b.type = 'button';
-      b.className = 'slot cheio' + (selecionado === id ? ' ativo' : '');
-      b.title = ITENS[id].nome;
-      b.setAttribute('aria-label', ITENS[id].nome);
-      b.textContent = ITENS[id].icone;
-      b.addEventListener('click', () => clicarItem(id));
-      barra.appendChild(b);
+      const cls = 'slot cheio' + (selecionado === id ? ' ativo' : '');
+      html += `<button type="button" class="${cls}" data-item="${id}" title="${ITENS[id].nome}" aria-label="${ITENS[id].nome}">${ITENS[id].icone}</button>`;
     } else {
-      const d = document.createElement('div');
-      d.className = 'slot';
-      barra.appendChild(d);
+      html += `<div class="slot"></div>`;
     }
+  }
+  barra.innerHTML = html;
+  const botoes = barra.querySelectorAll('button[data-item]');
+  for (let i = 0; i < botoes.length; i++) {
+    botoes[i].onclick = function() {
+      clicarItem(this.getAttribute('data-item'));
+    };
   }
 }
 function addItem(id) {
@@ -97,7 +96,11 @@ function addItem(id) {
   renderInventario();
 }
 function removerItem(id) {
-  estado.inventario = estado.inventario.filter(i => i !== id);
+  const novo = [];
+  for (let i = 0; i < estado.inventario.length; i++) {
+    if (estado.inventario[i] !== id) novo.push(estado.inventario[i]);
+  }
+  estado.inventario = novo;
   salvar();
   renderInventario();
 }
@@ -118,14 +121,14 @@ function clicarItem(id) {
   renderInventario();
 }
 function ligar(id, alvo, fn, usos) {
-  $(id).addEventListener('click', () => {
+  $(id).onclick = function() {
     if (selecionado) {
       if (usos && usos[selecionado]) { usos[selecionado](); return; }
       fala(ITENS[selecionado].nome + ' não funciona em: ' + alvo + '. Clique no item de novo para guardá-lo.');
       return;
     }
     fn();
-  });
+  };
 }
 
 function abrirMapa() {
@@ -191,78 +194,89 @@ function abrirPrancheta() {
   `);
 }
 
-function abrirPainel(n) {
-  const e = ESTAGIOS[n];
-  let codigo = '';
-  abrirModal('Painel térmico · Estágio ' + n, `
-    <div class="display-forno">
-      FORNOS CONFEITARIA<br>
-      ESTÁGIO ${n}<br>
-      TEMP °F: ${e.f} → °C: ?
-    </div>
-    <p>Digite a temperatura em °C (até 3 dígitos).</p>
-    <div class="visor" id="visor">---</div>
-    <div class="teclado">
-      ${[1,2,3,4,5,6,7,8,9].map(d => `<button type="button" data-n="${d}">${d}</button>`).join('')}
-      <button type="button" data-a="limpar">C</button>
-      <button type="button" data-n="0">0</button>
-      <button type="button" data-a="ok">OK</button>
-    </div>
-    ${n === 2 ? '<p class="dica-modal">O visor não mostra a temperatura em °F deste estágio. Procure no cenário.</p>' : ''}
-  `);
-  const visor = $('#visor');
-  const atualizar = () => { visor.textContent = (codigo + '---').slice(0, 3); };
-  modalCorpo.querySelector('.teclado').addEventListener('click', ev => {
-    const b = ev.target.closest('button');
-    if (!b) return;
-    if (b.dataset.n !== undefined) {
-      if (codigo.length < 3) { codigo += b.dataset.n; atualizar(); }
-    } else if (b.dataset.a === 'limpar') {
-      codigo = '';
-      atualizar();
-    } else if (b.dataset.a === 'ok' && codigo.length > 0) {
-      if (Number(codigo) === e.c) {
-        estado.fornoEtapa = n === 1 ? 1 : 3;
-        estado.assadoEm = Date.now() + TEMPO_ESTAGIO;
-        estado.acertos++;
-        salvar();
-        atualizarForno();
-        fecharModal();
-        fala(n === 1
-          ? 'Bip! O forno ajustou para ' + e.c + ' °C. Estágio 1 em andamento, o merengue está secando.'
-          : 'Bip! O forno ajustou para ' + e.c + ' °C. Estágio 2 em andamento, o merengue está dourando.');
-      } else {
-        estado.erros++;
-        salvar();
-        codigo = '';
-        visor.classList.add('erro');
-        visor.textContent = 'ERRO';
-        setTimeout(() => { visor.classList.remove('erro'); atualizar(); }, 800);
-      }
+const EnigmaForno = {
+  etapa: estado.fornoEtapa,
+  resolvido: estado.merengue,
+  abrirPainel: function(n) {
+    const e = ESTAGIOS[n];
+    let codigo = '';
+    const nums = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+    let teclasHtml = '';
+    for (let i = 0; i < nums.length; i++) {
+      teclasHtml += `<button type="button" data-n="${nums[i]}">${nums[i]}</button>`;
     }
-  });
-}
-
-function abrirForno() {
-  const et = estado.fornoEtapa;
-  if (et === 0) { abrirPainel(1); return; }
-  if (et === 2) { abrirPainel(2); return; }
-  if (et === 1 || et === 3) {
-    const s = Math.max(1, Math.ceil((estado.assadoEm - Date.now()) / 1000));
-    fala('O merengue ainda está no forno. Faltam cerca de ' + s + ' segundos.');
-    return;
+    abrirModal('Painel térmico · Estágio ' + n, `
+      <div class="display-forno">
+        FORNOS CONFEITARIA<br>
+        ESTÁGIO ${n}<br>
+        TEMP °F: ${e.f} → °C: ?
+      </div>
+      <p>Digite a temperatura em °C (até 3 dígitos).</p>
+      <div class="visor" id="visor">---</div>
+      <div class="teclado">
+        ${teclasHtml}
+        <button type="button" data-a="limpar">C</button>
+        <button type="button" data-n="0">0</button>
+        <button type="button" data-a="ok">OK</button>
+      </div>
+      ${n === 2 ? '<p class="dica-modal">O visor não mostra a temperatura em °F deste estágio. Procure no cenário.</p>' : ''}
+    `);
+    const self = this;
+    const visor = $('#visor');
+    function atualizar() { visor.innerText = (codigo + '---').slice(0, 3); }
+    modalCorpo.querySelector('.teclado').onclick = function(ev) {
+      const b = ev.target.closest('button');
+      if (!b) return;
+      if (b.dataset.n !== undefined) {
+        if (codigo.length < 3) { codigo += b.dataset.n; atualizar(); }
+      } else if (b.dataset.a === 'limpar') {
+        codigo = '';
+        atualizar();
+      } else if (b.dataset.a === 'ok' && codigo.length > 0) {
+        if (Number(codigo) === e.c) {
+          estado.fornoEtapa = n === 1 ? 1 : 3;
+          self.etapa = estado.fornoEtapa;
+          estado.assadoEm = Date.now() + TEMPO_ESTAGIO;
+          estado.acertos++;
+          salvar();
+          atualizarForno();
+          fecharModal();
+          fala(n === 1
+            ? 'Bip! O forno ajustou para ' + e.c + ' °C. Estágio 1 em andamento, o merengue está secando.'
+            : 'Bip! O forno ajustou para ' + e.c + ' °C. Estágio 2 em andamento, o merengue está dourando.');
+        } else {
+          estado.erros++;
+          salvar();
+          codigo = '';
+          visor.classList.add('erro');
+          visor.innerText = 'ERRO';
+          setTimeout(function() { visor.classList.remove('erro'); atualizar(); }, 800);
+        }
+      }
+    };
+  },
+  interagir: function() {
+    const et = estado.fornoEtapa;
+    if (et === 0) { this.abrirPainel(1); return; }
+    if (et === 2) { this.abrirPainel(2); return; }
+    if (et === 1 || et === 3) {
+      const s = Math.max(1, Math.ceil((estado.assadoEm - Date.now()) / 1000));
+      fala('O merengue ainda está no forno. Faltam cerca de ' + s + ' segundos.');
+      return;
+    }
+    if (et === 4) {
+      estado.merengue = true;
+      estado.fornoEtapa = 5;
+      this.resolvido = true;
+      salvar();
+      addItem('merengue');
+      atualizarForno();
+      fala('Você tirou o merengue do forno, dourado e firme. Agora a porta da Câmara Fria vai abrir.');
+      return;
+    }
+    fala('O forno está vazio. O merengue já está com você.');
   }
-  if (et === 4) {
-    estado.merengue = true;
-    estado.fornoEtapa = 5;
-    salvar();
-    addItem('merengue');
-    atualizarForno();
-    fala('Você tirou o merengue do forno, dourado e firme. Agora a porta da Câmara Fria vai abrir.');
-    return;
-  }
-  fala('O forno está vazio. O merengue já está com você.');
-}
+};
 
 function atualizarForno() {
   const f = $('#no-forno');
@@ -280,59 +294,64 @@ function atualizarForno() {
   f.classList.toggle('pronto', estado.fornoEtapa === 2 || estado.fornoEtapa === 4);
 }
 
-function abrirCalda() {
-  if (estado.caldaPronta) {
-    fala('A calda já está no ponto. Guarde-a para o prato final.');
-    return;
-  }
-  selecionado = null;
-  renderInventario();
-  const span = CALDA.max - CALDA.min;
-  const zonaEsq = ((CALDA.alvo - CALDA.tol - CALDA.min) / span) * 100;
-  const zonaLarg = ((2 * CALDA.tol) / span) * 100;
-  abrirModal('Ponto da calda', `
-    <p>Pare o termômetro no <strong>Ponto de Bola Mole: ${CALDA.alvo} °C</strong>.</p>
-    <div class="termo">
-      <div class="zona" style="left:${zonaEsq}%;width:${zonaLarg}%"></div>
-      <div class="agulha" id="agulha"></div>
-    </div>
-    <div class="leitura" id="leitura">${CALDA.min.toFixed(1)} °C</div>
-    <button type="button" class="btn-pixel" id="parar">PARAR</button>
-    <p class="dica-modal" id="calda-msg">Clique em PARAR quando a agulha estiver na faixa verde.</p>
-  `);
-  const agulha = $('#agulha');
-  const leitura = $('#leitura');
-  let temp = CALDA.min;
-  const t0 = performance.now();
-  let raf = 0;
-  const quadro = agora => {
-    const d = ((agora - t0) / 1000) * CALDA.vel;
-    const m = d % (2 * span);
-    temp = CALDA.min + (m <= span ? m : 2 * span - m);
-    agulha.style.left = (((temp - CALDA.min) / span) * 100) + '%';
-    leitura.textContent = temp.toFixed(1) + ' °C';
-    raf = requestAnimationFrame(quadro);
-  };
-  raf = requestAnimationFrame(quadro);
-  aoFechar = () => cancelAnimationFrame(raf);
-
-  $('#parar').addEventListener('click', () => {
-    if (Math.abs(temp - CALDA.alvo) <= CALDA.tol) {
-      estado.caldaPronta = true;
-      estado.acertos++;
-      salvar();
-      addItem('calda');
-      fecharModal();
-      fala('Perfeito! A calda parou em ' + temp.toFixed(1) + ' °C, no ponto de bola mole. Você guardou um pouco.');
-    } else {
-      estado.erros++;
-      salvar();
-      $('#calda-msg').textContent = temp < CALDA.alvo
-        ? 'Cedo demais: a calda ainda está rala (' + temp.toFixed(1) + ' °C). Tente de novo.'
-        : 'Passou do ponto (' + temp.toFixed(1) + ' °C). Tente de novo.';
+const EnigmaCalda = {
+  resolvido: estado.caldaPronta,
+  abrir: function() {
+    if (estado.caldaPronta) {
+      fala('A calda já está no ponto. Guarde-a para o prato final.');
+      return;
     }
-  });
-}
+    selecionado = null;
+    renderInventario();
+    const span = CALDA.max - CALDA.min;
+    const zonaEsq = ((CALDA.alvo - CALDA.tol - CALDA.min) / span) * 100;
+    const zonaLarg = ((2 * CALDA.tol) / span) * 100;
+    abrirModal('Ponto da calda', `
+      <p>Pare o termômetro no <strong>Ponto de Bola Mole: ${CALDA.alvo} °C</strong>.</p>
+      <div class="termo">
+        <div class="zona" style="left:${zonaEsq}%;width:${zonaLarg}%"></div>
+        <div class="agulha" id="agulha"></div>
+      </div>
+      <div class="leitura" id="leitura">${CALDA.min.toFixed(1)} °C</div>
+      <button type="button" class="btn-pixel" id="parar">PARAR</button>
+      <p class="dica-modal" id="calda-msg">Clique em PARAR quando a agulha estiver na faixa verde.</p>
+    `);
+    const self = this;
+    const agulha = $('#agulha');
+    const leitura = $('#leitura');
+    let temp = CALDA.min;
+    const t0 = performance.now();
+    let raf = 0;
+    function quadro(agora) {
+      const d = ((agora - t0) / 1000) * CALDA.vel;
+      const m = d % (2 * span);
+      temp = CALDA.min + (m <= span ? m : 2 * span - m);
+      agulha.style.left = (((temp - CALDA.min) / span) * 100) + '%';
+      leitura.innerText = temp.toFixed(1) + ' °C';
+      raf = requestAnimationFrame(quadro);
+    }
+    raf = requestAnimationFrame(quadro);
+    aoFechar = function() { cancelAnimationFrame(raf); };
+
+    $('#parar').onclick = function() {
+      if (Math.abs(temp - CALDA.alvo) <= CALDA.tol) {
+        estado.caldaPronta = true;
+        self.resolvido = true;
+        estado.acertos++;
+        salvar();
+        addItem('calda');
+        fecharModal();
+        fala('Perfeito! A calda parou em ' + temp.toFixed(1) + ' °C, no ponto de bola mole. Você guardou um pouco.');
+      } else {
+        estado.erros++;
+        salvar();
+        $('#calda-msg').innerText = temp < CALDA.alvo
+          ? 'Cedo demais: a calda ainda está rala (' + temp.toFixed(1) + ' °C). Tente de novo.'
+          : 'Passou do ponto (' + temp.toFixed(1) + ' °C). Tente de novo.';
+      }
+    };
+  }
+};
 
 function abrirPorta() {
   if (!estado.merengue) {
@@ -349,10 +368,10 @@ ligar('#no-receita', 'Receita', abrirReceita);
 ligar('#no-poster', 'Cartaz', abrirPoster);
 ligar('#no-tabela', 'Pistas de conversão', abrirTabela);
 ligar('#no-prancheta', 'Prancheta', abrirPrancheta);
-ligar('#no-forno', 'Forno', abrirForno);
+ligar('#no-forno', 'Forno', function() { EnigmaForno.interagir(); });
 ligar('#no-porta', 'Porta', abrirPorta);
 
-ligar('#no-calda', 'Frasco de calda', () => {
+ligar('#no-calda', 'Frasco de calda', function() {
   if (estado.caldaPronta) {
     fala('A calda já está pronta e guardada.');
   } else if (estado.inventario.includes('termometro')) {
@@ -360,12 +379,12 @@ ligar('#no-calda', 'Frasco de calda', () => {
   } else {
     fala('Um frasco de açúcar caramelizando sobre um fogareiro. Falta um termômetro para acertar o ponto da calda.');
   }
-}, { termometro: abrirCalda });
+}, { termometro: function() { EnigmaCalda.abrir(); } });
 
-ligar('#no-marmore', 'Bancada', () => {
+ligar('#no-marmore', 'Bancada', function() {
   fala('O mármore está gelado como gelo. Serve para descongelar coisas devagar.');
 }, {
-  yuzu: () => {
+  yuzu: function() {
     removerItem('yuzu');
     selecionado = null;
     estado.yuzuUsado = true;
@@ -375,22 +394,24 @@ ligar('#no-marmore', 'Bancada', () => {
   }
 });
 
-const avisoForno = () => fala('Forno vazio e desligado. O visor mostra "ESTÁGIO 1 · TEMP °F: 176 → °C: --", mas só o forno de cima está com o merengue.');
+function avisoForno() {
+  fala('Forno vazio e desligado. O visor mostra "ESTÁGIO 1 · TEMP °F: 176 → °C: --", mas só o forno de cima está com o merengue.');
+}
 ligar('#no-forno2', 'Forno', avisoForno);
 ligar('#no-forno3', 'Forno', avisoForno);
 ligar('#no-forno4', 'Forno', avisoForno);
 
-ligar('#no-janela', 'Janela', () => fala('Uma janela com grades. Lá fora é noite e a luz esverdeada ilumina os frascos.'));
-ligar('#no-frasco', 'Alambique', () => fala('Um alambique de vidro com um líquido marrom borbulhando devagar. O Chef devia fazer experiências aqui.'));
-ligar('#no-extrato', 'Extrato de merengue', () => fala('Uma garrafa de extrato de merengue. Só serve para aromatizar, não é o que você procura.'));
-ligar('#no-yuzu', 'Pote de yuzu', () => fala('Um pote com a etiqueta "Yuzu Congelada", mas só tem gelo derretido. O estoque de verdade deve estar na Câmara Fria.'));
-ligar('#no-barril', 'Barril', () => fala('Um barril de metal enferrujado. Está vazio.'));
-ligar('#no-caixote', 'Caixote', () => fala('Um caixote com potes de barro vazios. Nada útil.'));
-ligar('#no-potes-meio', 'Potes', () => fala('Farinha, açúcar impalpável, tempero de confeiteiro e essências. Nenhuma baunilha rara por aqui.'));
-ligar('#no-prateleira', 'Prateleira', () => fala('Mais potes de ingredientes: farinha, açúcar e temperos. Nada que você precise agora.'));
-ligar('#no-panelas', 'Panelas', () => fala('Panelas empilhadas, sem uso há tempos.'));
-ligar('#no-bicos', 'Bicos de confeitar', () => fala('Bicos de confeitar em formato de estrela e de gota. Vão servir no empratamento, lá no final.'));
-ligar('#no-batedeira', 'Batedeira', () => fala('Uma batedeira industrial. O merengue já foi batido e está numa assadeira dentro do forno de cima. Falta só assar.'));
+ligar('#no-janela', 'Janela', function() { fala('Uma janela com grades. Lá fora é noite e a luz esverdeada ilumina os frascos.'); });
+ligar('#no-frasco', 'Alambique', function() { fala('Um alambique de vidro com um líquido marrom borbulhando devagar. O Chef devia fazer experiências aqui.'); });
+ligar('#no-extrato', 'Extrato de merengue', function() { fala('Uma garrafa de extrato de merengue. Só serve para aromatizar, não é o que você procura.'); });
+ligar('#no-yuzu', 'Pote de yuzu', function() { fala('Um pote com a etiqueta "Yuzu Congelada", mas só tem gelo derretido. O estoque de verdade deve estar na Câmara Fria.'); });
+ligar('#no-barril', 'Barril', function() { fala('Um barril de metal enferrujado. Está vazio.'); });
+ligar('#no-caixote', 'Caixote', function() { fala('Um caixote com potes de barro vazios. Nada útil.'); });
+ligar('#no-potes-meio', 'Potes', function() { fala('Farinha, açúcar impalpável, tempero de confeiteiro e essências. Nenhuma baunilha rara por aqui.'); });
+ligar('#no-prateleira', 'Prateleira', function() { fala('Mais potes de ingredientes: farinha, açúcar e temperos. Nada que você precise agora.'); });
+ligar('#no-panelas', 'Panelas', function() { fala('Panelas empilhadas, sem uso há tempos.'); });
+ligar('#no-bicos', 'Bicos de confeitar', function() { fala('Bicos de confeitar em formato de estrela e de gota. Vão servir no empratamento, lá no final.'); });
+ligar('#no-batedeira', 'Batedeira', function() { fala('Uma batedeira industrial. O merengue já foi batido e está numa assadeira dentro do forno de cima. Falta só assar.'); });
 
 function formatar(seg) {
   const m = String(Math.floor(seg / 60)).padStart(2, '0');
@@ -409,7 +430,7 @@ function fimDeJogo() {
 function tick() {
   const restante = Math.max(0, Math.ceil((estado.fim - Date.now()) / 1000));
   const cron = $('#cronometro');
-  cron.textContent = formatar(restante);
+  cron.innerText = formatar(restante);
   cron.classList.toggle('urgente', restante <= 60);
   atualizarForno();
   if (restante <= 0) fimDeJogo();
